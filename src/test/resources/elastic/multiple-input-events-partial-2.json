@@ -1,0 +1,30 @@
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "1" } }
+{ "double_col": 1.123456787, "short_col": -20345, "integer_col": -156781, "keyword_col": "flink test 1", "date_col": "2015-01-09T12:10:10Z", "ip_col": "192.168.1.1" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "2" } }
+{ "double_col": 2.123456787, "short_col": -13445, "integer_col": -11341, "keyword_col": "flink test 2", "date_col": "2015-01-09T05:15:10Z", "ip_col": "192.168.1.2" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "3" } }
+{ "double_col": 3.123456787, "short_col": -8345, "integer_col": -9000, "keyword_col": "flink test 3", "date_col": "2015-01-09T07:10:10Z", "ip_col": "192.168.1.3" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "4" } }
+{ "double_col": 4.123456787, "short_col": -2345, "integer_col": -6000, "keyword_col": "flink test 4", "date_col": "2015-01-09T13:45:10Z", "ip_col": "192.168.1.4" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "5" } }
+{ "double_col": 5.123456787, "short_col": 8345, "integer_col": 10000, "keyword_col": "flink test 5", "date_col": "2015-01-09T16:30:10Z", "ip_col": "192.168.1.5" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "6" } }
+{ "double_col": 6.123456787, "short_col": 11345, "integer_col": 11000, "keyword_col": "flink test 6", "date_col": "2015-01-09T06:40:10Z", "ip_col": "192.168.1.6" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "7" } }
+{ "double_col": 7.123456787, "short_col": 13345, "integer_col": 17000, "keyword_col": "flink test 7", "date_col": "2015-01-09T08:50:10Z", "ip_col": "192.168.1.7" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "8" } }
+{ "double_col": 8.123456787, "short_col": 15345, "integer_col": 40000, "keyword_col": "flink test 8", "date_col": "2015-01-09T11:20:10Z", "ip_col": "192.168.2.1" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "9" } }
+{ "double_col": 9.123456787, "short_col": 16345, "integer_col": 60000, "keyword_col": "flink test 9", "date_col": "2015-01-09T15:30:10Z", "ip_col": "192.168.2.2" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "10" } }
+{ "double_col": 10.123456787, "short_col": 18345, "integer_col": 65000, "keyword_col": "flink test 10", "date_col": "2015-01-10T05:10:10Z", "ip_col": "192.168.2.3" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "11" } }
+{ "double_col": 11.123456787, "short_col": 21345, "integer_col": 75000, "keyword_col": "flink test 11", "date_col": "2015-01-10T09:20:10Z", "ip_col": "192.168.2.4" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "12" } }
+{ "double_col": 12.123456787, "short_col": 23345, "integer_col": 85000, "keyword_col": "flink test 12", "date_col": "2015-01-10T11:30:10Z", "ip_col": "192.168.3.1" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "13" } }
+{ "double_col": 13.123456787, "short_col": 26345, "integer_col": 95000, "keyword_col": "flink test 13", "date_col": "2015-01-10T14:40:10Z", "ip_col": "192.168.3.2" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "14" } }
+{ "double_col": 14.123456787, "short_col": 29345, "integer_col": 200000, "keyword_col": "flink test 14", "date_col": "2015-01-10T17:50:10Z", "ip_col": "192.168.3.3" }
+{ "create" : { "_index" : "test_partial_schema_table_2", "_id" : "15" } }
+{ "double_col": 15.123456787, "short_col": 31345, "integer_col": 950000, "keyword_col": "flink test 15", "date_col": "2015-01-10T20:00:10Z", "ip_col": "192.168.4.1" }
