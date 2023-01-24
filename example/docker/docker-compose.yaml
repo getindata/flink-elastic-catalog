@@ -6,6 +6,9 @@ services:
     build:
       context: ../../
       dockerfile: ./example/docker/jupyter/Dockerfile
+      args:
+      - FLINK_VERSION=1.15.1
+      - ELASTIC_VERSION=8.3.3
     ports:
       - 8888:8888
 
@@ -70,6 +73,7 @@ services:
       dockerfile: ./example/docker/flink/Dockerfile
       args:
       - FLINK_VERSION=1.15.1
+      - ELASTIC_VERSION=8.3.3
     command: sleep infinity
     environment:
       - AWS_ACCESS_KEY_ID=flink-sql-runner
@@ -82,6 +86,7 @@ services:
       dockerfile: ./example/docker/flink/Dockerfile
       args:
       - FLINK_VERSION=1.15.1
+      - ELASTIC_VERSION=8.3.3
     expose:
       - "6123"
     ports:
@@ -106,6 +111,7 @@ services:
       dockerfile: ./example/docker/flink/Dockerfile
       args:
       - FLINK_VERSION=1.15.1
+      - ELASTIC_VERSION=8.3.3
     expose:
       - "6121"
       - "6122"

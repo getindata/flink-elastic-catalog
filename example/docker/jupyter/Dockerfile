@@ -1,4 +1,6 @@
 FROM jupyter/minimal-notebook:python-3.8.8
+ARG FLINK_VERSION
+ARG ELASTIC_VERSION
 
 USER root
 RUN apt-get update && apt-get install -y software-properties-common curl wget telnet
@@ -13,8 +15,8 @@ USER $NB_USER
 RUN python3 -m pip install pandas==1.3.5
 RUN python3 -m pip install jupyterlab-lsp \
     streaming-jupyter-integrations==0.13.1 \
-    apache-flink==1.15.1 \
-    apache-flink-libraries==1.15.1 \
+    apache-flink==${FLINK_VERSION} \
+    apache-flink-libraries==${FLINK_VERSION} \
     --use-deprecated=legacy-resolver
 RUN python3 -m pip install --upgrade numpy
 RUN python3 -m pip install ipytree
@@ -27,7 +29,7 @@ COPY example/docker/jupyter/jupyter_notebook_config.py /home/jovyan/.jupyter/
 COPY example/docker/jupyter/jupyter_server_config.py /home/jovyan/.jupyter/
 
 # Copy/download Flink extra dependencies
-COPY flink-connector-jdbc/target/flink-connector-jdbc2-1.15.1.jar $PYFLINK_LIB_DIR
+COPY flink-connector-jdbc/target/flink-connector-jdbc2-${FLINK_VERSION}.jar $PYFLINK_LIB_DIR
 COPY target/flink-elastic-catalog-1.0-SNAPSHOT.jar $PYFLINK_LIB_DIR
-RUN wget https://repo1.maven.org/maven2/org/elasticsearch/plugin/x-pack-sql-jdbc/8.3.3/x-pack-sql-jdbc-8.3.3.jar \
-    -O $PYFLINK_LIB_DIR/x-pack-sql-jdbc-8.3.3.jar
+RUN wget https://repo1.maven.org/maven2/org/elasticsearch/plugin/x-pack-sql-jdbc/${ELASTIC_VERSION}/x-pack-sql-jdbc-${ELASTIC_VERSION}.jar \
+    -O $PYFLINK_LIB_DIR/x-pack-sql-jdbc-${ELASTIC_VERSION}.jar
