@@ -18,6 +18,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.utils.Lists;
+import org.apache.flink.connector.jdbc.catalog.dialect.ElasticTypeMapper;
 import org.apache.flink.connector.jdbc2.catalog.AbstractJdbcCatalog;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
@@ -31,9 +32,9 @@ import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 import org.apache.flink.table.types.DataType;
 import org.elasticsearch.xpack.sql.jdbc.EsDriver;
 
-import static org.apache.flink.connector.jdbc.catalog.ElasticJDBCCatalogFactoryOptions.IDENTIFIER;
-import static org.apache.flink.connector.jdbc.catalog.ElasticJDBCCatalogFactoryOptions.PASSWORD;
-import static org.apache.flink.connector.jdbc.catalog.ElasticJDBCCatalogFactoryOptions.USERNAME;
+import static org.apache.flink.connector.jdbc.catalog.factory.ElasticJdbcCatalogFactoryOptions.IDENTIFIER;
+import static org.apache.flink.connector.jdbc.catalog.factory.ElasticJdbcCatalogFactoryOptions.PASSWORD;
+import static org.apache.flink.connector.jdbc.catalog.factory.ElasticJdbcCatalogFactoryOptions.USERNAME;
 import static java.lang.String.format;
 import static org.apache.flink.connector.jdbc2.table.JdbcConnectorOptions.SCAN_PARTITION_COLUMN;
 import static org.apache.flink.connector.jdbc2.table.JdbcConnectorOptions.SCAN_PARTITION_LOWER_BOUND;
@@ -75,19 +76,15 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
                           String password,
                           String baseUrl,
                           Map<String, String> properties) {
-        super(catalogName, defaultDatabase, username, password, baseUrl);
+        // In elastic the default database name is not a part of defaultUrl, therefore, pass baseUrl
+        // as defaultUrl.
+        super(catalogName, defaultDatabase, username, password, baseUrl, baseUrl);
         this.dialectTypeMapper = new ElasticTypeMapper();
         String[] catalogDefaultScanProperties = extractCatalogDefaultScanProperties(properties);
         this.indexPatterns = extractIndexPatterns(properties);
         this.catalogDefaultScanPartitionColumnName = catalogDefaultScanProperties[0];
         this.catalogDefaultScanPartitionCapacity = catalogDefaultScanProperties[1];
         this.scanPartitionProperties = extractScanTablePartitionProperties(properties);
-    }
-
-    @Override
-    protected String getDefaultUrl() {
-        // In case of Elastic there is no such thing as database
-        return getBaseUrl();
     }
 
     private String[] extractCatalogDefaultScanProperties(Map<String, String> properties) {
@@ -415,7 +412,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         return indexPatterns;
     }
 
-    static class ScanPartitionProperties {
+    public static class ScanPartitionProperties {
         private String partitionColumnName;
         private Integer partitionNumber;
         private Long scanPartitionLowerBound;

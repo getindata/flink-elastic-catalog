@@ -1,6 +1,8 @@
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.catalog.factory;
 
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.jdbc.catalog.ElasticCatalog;
+import org.apache.flink.connector.jdbc.catalog.ElasticsearchTestContainer;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.factories.CatalogFactory.Context;
@@ -16,8 +18,8 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ElasticJDBCCatalogFactoryTest {
-    private static ElasticJDBCCatalogFactory catalogFactory;
+public class ElasticJdbcCatalogFactoryTest {
+    private static ElasticJdbcCatalogFactory catalogFactory;
     private static String url;
     private static final ElasticsearchTestContainer container = new ElasticsearchTestContainer();
 
@@ -26,7 +28,7 @@ public class ElasticJDBCCatalogFactoryTest {
         container.withEnv("xpack.security.enabled", "false");
         container.start();
 
-        catalogFactory = new ElasticJDBCCatalogFactory();
+        catalogFactory = new ElasticJdbcCatalogFactory();
 
         url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
@@ -40,7 +42,7 @@ public class ElasticJDBCCatalogFactoryTest {
                 "test-catalog",
                 options,
                 new Configuration(),
-                ElasticJDBCCatalogFactoryTest.class.getClassLoader());
+                ElasticJdbcCatalogFactoryTest.class.getClassLoader());
 
         // when
         ElasticCatalog catalog = (ElasticCatalog) catalogFactory.createCatalog(catalogContext);
@@ -63,7 +65,7 @@ public class ElasticJDBCCatalogFactoryTest {
                 "test-catalog",
                 options,
                 new Configuration(),
-                ElasticJDBCCatalogFactoryTest.class.getClassLoader());
+                ElasticJdbcCatalogFactoryTest.class.getClassLoader());
 
         // when
         ElasticCatalog catalog = (ElasticCatalog) catalogFactory.createCatalog(catalogContext);
@@ -86,7 +88,7 @@ public class ElasticJDBCCatalogFactoryTest {
         Context catalogContext = new FactoryUtil.DefaultCatalogContext("test-catalog",
                 options,
                 new Configuration(),
-                ElasticJDBCCatalogFactoryTest.class.getClassLoader());
+                ElasticJdbcCatalogFactoryTest.class.getClassLoader());
 
         // when
         ElasticCatalog catalog = (ElasticCatalog) catalogFactory.createCatalog(catalogContext);
@@ -105,7 +107,7 @@ public class ElasticJDBCCatalogFactoryTest {
         Context catalogContext = new FactoryUtil.DefaultCatalogContext("test-catalog",
                 options,
                 new Configuration(),
-                ElasticJDBCCatalogFactoryTest.class.getClassLoader());
+                ElasticJdbcCatalogFactoryTest.class.getClassLoader());
 
         // when
         ElasticCatalog catalog = (ElasticCatalog) catalogFactory.createCatalog(catalogContext);

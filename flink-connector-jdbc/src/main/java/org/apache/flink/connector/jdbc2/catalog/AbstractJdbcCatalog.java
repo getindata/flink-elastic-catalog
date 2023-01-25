@@ -96,6 +96,18 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
             String username,
             String pwd,
             String baseUrl) {
+        this(catalogName, defaultDatabase, username, pwd,
+            baseUrl.endsWith("/") ? baseUrl : baseUrl + "/",
+            (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/") + defaultDatabase);
+    }
+
+    public AbstractJdbcCatalog(
+            String catalogName,
+            String defaultDatabase,
+            String username,
+            String pwd,
+            String baseUrl,
+            String defaultUrl) {
         super(catalogName, defaultDatabase);
 
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(username));
@@ -107,22 +119,19 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
         this.username = username;
         this.pwd = pwd;
         this.baseUrl = baseUrl;
-        this.defaultUrl = this.baseUrl;
-        // Below is the original version which does not work with elastic.
-        // this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
-        // this.defaultUrl = this.baseUrl + defaultDatabase;
+        this.defaultUrl = defaultUrl;
     }
 
     @Override
     public void open() throws CatalogException {
         // test connection, fail early if we cannot connect to database
-        try (Connection conn = DriverManager.getConnection(getDefaultUrl(), username, pwd)) {
+        try (Connection conn = DriverManager.getConnection(defaultUrl, username, pwd)) {
         } catch (SQLException e) {
             throw new ValidationException(
-                    String.format("Failed connecting to %s via JDBC.", getDefaultUrl()), e);
+                    String.format("Failed connecting to %s via JDBC.", defaultUrl), e);
         }
 
-        LOG.info("Catalog {} established connection to {}", getName(), getDefaultUrl());
+        LOG.info("Catalog {} established connection to {}", getName(), defaultUrl);
     }
 
     @Override
@@ -142,10 +151,6 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
 
     public String getBaseUrl() {
         return baseUrl;
-    }
-
-    protected String getDefaultUrl() {
-        return defaultUrl;
     }
 
     // ------ retrieve PK constraint ------

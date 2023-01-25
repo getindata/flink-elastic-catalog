@@ -1,4 +1,4 @@
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.catalog.factory;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -7,16 +7,17 @@ import java.util.stream.Collectors;
 
 import org.apache.flink.configuration.ConfigOption;
 import org.apache.flink.configuration.ConfigOptions;
+import org.apache.flink.connector.jdbc.catalog.ElasticCatalog;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.FactoryUtil;
 
-import static org.apache.flink.connector.jdbc.catalog.ElasticJDBCCatalogFactoryOptions.BASE_URL;
-import static org.apache.flink.connector.jdbc.catalog.ElasticJDBCCatalogFactoryOptions.DEFAULT_DATABASE;
-import static org.apache.flink.connector.jdbc.catalog.ElasticJDBCCatalogFactoryOptions.PASSWORD;
-import static org.apache.flink.connector.jdbc.catalog.ElasticJDBCCatalogFactoryOptions.USERNAME;
+import static org.apache.flink.connector.jdbc.catalog.factory.ElasticJdbcCatalogFactoryOptions.BASE_URL;
+import static org.apache.flink.connector.jdbc.catalog.factory.ElasticJdbcCatalogFactoryOptions.DEFAULT_DATABASE;
+import static org.apache.flink.connector.jdbc.catalog.factory.ElasticJdbcCatalogFactoryOptions.PASSWORD;
+import static org.apache.flink.connector.jdbc.catalog.factory.ElasticJdbcCatalogFactoryOptions.USERNAME;
 
-public class ElasticJDBCCatalogFactory implements CatalogFactory {
+public class ElasticJdbcCatalogFactory implements CatalogFactory {
 
     public static final ConfigOption<String> DEFAULT_SCAN_PARTITION_COLUMN_NAME =
             ConfigOptions.key("catalog.default.scan.partition.column.name")
@@ -41,7 +42,7 @@ public class ElasticJDBCCatalogFactory implements CatalogFactory {
 
     @Override
     public String factoryIdentifier() {
-        return ElasticJDBCCatalogFactoryOptions.IDENTIFIER;
+        return ElasticJdbcCatalogFactoryOptions.IDENTIFIER;
     }
 
     @Override
