@@ -15,15 +15,16 @@ services:
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.3.3
     environment:
-      - "xpack.security.enabled=false"
+      - "xpack.security.enabled=true"
       - "discovery.type=single-node"
       - "ingest.geoip.downloader.enabled=false"
       - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+      - "ELASTIC_PASSWORD=passwd"
     ports:
       - 9200:9200
       - 9300:9300
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9200/"]
+      test: ["CMD", "curl", "-u", "elastic:passwd", "-f", "http://localhost:9200/"]
       start_period: 10s
       interval: 5s
       timeout: 10s
