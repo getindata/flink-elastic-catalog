@@ -1,5 +1,8 @@
 # example
 
+This directory contains definition docker-compose environment which makes it possible to use Jupyter Notebook with the
+Flink JDBC Elastic Catalog.
+
 The docker-compose environment consists of:
 
 - a standalone Flink cluster (`jobmanager` and `taskmanager` containers).
@@ -17,7 +20,8 @@ Jupyter UI can be accessed at `http://localhost:8888`.
 
 ## Build
 
-1. Build java artifacts first.
+1. Build java artifacts first (`flink-connector-jdbc` fork and `flink-elastic-catalog`). Run the commands below from the
+   project root directory.
    ```bash
    mvn clean install -DskipTests -T 1C -f flink-connector-jdbc/pom.xml
    mvn clean install -DskipTests -T 1C
