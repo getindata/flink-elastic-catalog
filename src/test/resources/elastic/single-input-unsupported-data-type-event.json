@@ -1,0 +1,2 @@
+{ "create" : { "_index" : "test_unsupported_data_type_table", "_id" : "1" } }
+{ "float_col": 1.1234, "double_col": 2.123456787, "geo_point_col": [-70.23, 34.14] }

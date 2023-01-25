@@ -1,0 +1,14 @@
+{
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "properties": {
+      "integer_col": { "type": "integer" },
+      "keyword_col": { "type": "keyword" },
+      "date_col": { "type": "date" },
+      "ip_col": { "type": "ip" },
+      "version_col": { "type": "text" }
+    }
+  }
+}

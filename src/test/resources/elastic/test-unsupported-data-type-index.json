@@ -1,0 +1,12 @@
+{
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "properties": {
+      "float_col": { "type": "float" },
+      "double_col": { "type": "double" },
+      "geo_point_col": { "type": "geo_point" }
+    }
+  }
+}
