@@ -1,4 +1,4 @@
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.catalog.factory;
 
 import org.apache.flink.annotation.Internal;
 import org.apache.flink.configuration.ConfigOption;
@@ -6,7 +6,7 @@ import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.table.catalog.CommonCatalogOptions;
 
 @Internal
-public class ElasticJDBCCatalogFactoryOptions {
+public class ElasticJdbcCatalogFactoryOptions {
     public static final String IDENTIFIER = "elasticsearch";
 
     public static final ConfigOption<String> DEFAULT_DATABASE =
@@ -33,6 +33,6 @@ public class ElasticJDBCCatalogFactoryOptions {
             .noDefaultValue()
             .withDescription("Url of ElasticSearch.");
 
-    private ElasticJDBCCatalogFactoryOptions() {
+    private ElasticJdbcCatalogFactoryOptions() {
     }
 }

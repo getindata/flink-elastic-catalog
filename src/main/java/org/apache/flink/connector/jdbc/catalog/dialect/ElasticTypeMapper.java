@@ -1,4 +1,4 @@
-package org.apache.flink.connector.jdbc.catalog;
+package org.apache.flink.connector.jdbc.catalog.dialect;
 
 import org.apache.flink.connector.jdbc2.dialect.JdbcDialectTypeMapper;
 import org.apache.flink.table.catalog.ObjectPath;
