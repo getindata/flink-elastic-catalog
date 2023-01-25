@@ -15,7 +15,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import org.apache.commons.compress.utils.Lists;
@@ -151,9 +150,8 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
 
     @Override
     public List<String> listDatabases() throws CatalogException {
-        Properties connectionProperties = new Properties();
         List<String> databases = new ArrayList<>();
-        try (Connection connection = DriverManager.getConnection(baseUrl, connectionProperties)) {
+        try (Connection connection = DriverManager.getConnection(baseUrl, username, pwd)) {
             try (Statement statement = connection.createStatement();
                  ResultSet results = statement.executeQuery("SHOW CATALOGS")) {
                 while (results.next()) {
@@ -168,9 +166,8 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
 
     @Override
     public List<String> listTables(String databaseName) throws DatabaseNotExistException, CatalogException {
-        Properties connectionProperties = new Properties();
         List<String> tables = new ArrayList<>();
-        try (Connection connection = DriverManager.getConnection(baseUrl, connectionProperties)) {
+        try (Connection connection = DriverManager.getConnection(baseUrl, username, pwd)) {
             try (Statement statement = connection.createStatement();
                  ResultSet results = statement.executeQuery("SHOW TABLES CATALOG '" + databaseName + "'")) {
                 while (results.next()) {

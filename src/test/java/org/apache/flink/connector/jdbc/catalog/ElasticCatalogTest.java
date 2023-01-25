@@ -1,5 +1,6 @@
 package org.apache.flink.connector.jdbc.catalog;
 
+import okhttp3.Credentials;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -56,10 +57,14 @@ public class ElasticCatalogTest {
     private static final String PARTIAL_SCHEMA_PATH_1 = "elastic/test-index-partial1.json";
     private static final String PARTIAL_SCHEMA_PATH_2 = "elastic/test-index-partial2.json";
 
+    private static final String USERNAME = "elastic";
+    private static final String PASSWORD = "password";
+
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-        container.withEnv("xpack.security.enabled", "false");
+        container.withEnv("xpack.security.enabled", "true");
+        container.withEnv("ELASTIC_PASSWORD", PASSWORD);
         container.start();
         Class.forName(container.getDriverClassName());
         enableTrial();
@@ -84,7 +89,8 @@ public class ElasticCatalogTest {
         Request request = new Request.Builder()
                 .url(String.format("http://%s:%d/_license/start_trial?acknowledge=true",
                         container.getHost(), container.getElasticPort()))
-                .post(RequestBody.create(null, new byte[]{}))
+                .post(RequestBody.create(new byte[]{}))
+                .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
                 .build();
         try (Response response = client.newCall(request).execute()) {
             assertTrue(response.isSuccessful());
@@ -98,8 +104,11 @@ public class ElasticCatalogTest {
                         container.getElasticPort(), inputTable))
                 .put(RequestBody.create(loadResource(indexPath)))
                 .addHeader("Content-Type", "application/json")
+            .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
                 .build();
-        client.newCall(request).execute();
+        try (Response response = client.newCall(request).execute()) {
+            assertTrue(response.isSuccessful());
+        }
     }
 
     private static void addTestData(String inputTable, String inputPath) throws Exception {
@@ -109,6 +118,7 @@ public class ElasticCatalogTest {
                         container.getElasticPort(), inputTable))
                 .post(RequestBody.create(loadResource(inputPath)))
                 .addHeader("Content-Type", "application/json")
+            .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
                 .build();
         client.newCall(request).execute();
     }
@@ -132,7 +142,7 @@ public class ElasticCatalogTest {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url);
 
         // then
         List<String> databases = catalog.listDatabases();
@@ -147,7 +157,7 @@ public class ElasticCatalogTest {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url);
 
         // then
         List<String> tables = catalog.listTables("docker-cluster");
@@ -171,7 +181,7 @@ public class ElasticCatalogTest {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url);
 
         // then
         assertTrue(catalog.tableExists(new ObjectPath("docker-cluster", "test_single_record_table")));
@@ -190,7 +200,7 @@ public class ElasticCatalogTest {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url);
 
         // then
         assertFalse(catalog.tableExists(new ObjectPath("docker-cluster", "nonexisting_table")));
@@ -203,7 +213,7 @@ public class ElasticCatalogTest {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -225,7 +235,7 @@ public class ElasticCatalogTest {
         scanProperties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -248,7 +258,7 @@ public class ElasticCatalogTest {
         scanProperties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -270,7 +280,7 @@ public class ElasticCatalogTest {
         scanProperties.put("catalog.default.scan.partition.size", "100");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_empty_table"));
 
         // then
@@ -292,7 +302,7 @@ public class ElasticCatalogTest {
         scanProperties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -312,7 +322,7 @@ public class ElasticCatalogTest {
         scanProperties.put("properties.scan.test_multiple_records_table.partition.column.name", "date_col");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -333,7 +343,7 @@ public class ElasticCatalogTest {
         scanProperties.put("properties.scan.test_missing_date_col_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_missing_date_col_table"));
 
@@ -354,7 +364,7 @@ public class ElasticCatalogTest {
         scanProperties.put("properties.scan.test_single_record_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_single_record_table"));
 
@@ -375,7 +385,7 @@ public class ElasticCatalogTest {
         scanProperties.put("properties.scan.test_multiple_records_table.partition.number", "0");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -393,7 +403,7 @@ public class ElasticCatalogTest {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_unsupported_data_type_table"));
 
@@ -414,7 +424,7 @@ public class ElasticCatalogTest {
         scanProperties.put("catalog.default.scan.partition.size", "5");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -439,7 +449,7 @@ public class ElasticCatalogTest {
         scanProperties.put("catalog.default.scan.partition.size", "5");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -460,7 +470,7 @@ public class ElasticCatalogTest {
         properties.put("properties.index.patterns", "test_*_record_table");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, properties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_*_record_table"));
 
         // then
@@ -513,7 +523,7 @@ public class ElasticCatalogTest {
         properties.put("properties.index.patterns", "test_*_record*_table,test_partial_schema_table_*");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, properties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_*_record*_table"));
         CatalogBaseTable table2 = catalog.getTable(new ObjectPath("docker-cluster", "test_partial_schema_table_*"));
 
@@ -547,7 +557,7 @@ public class ElasticCatalogTest {
         properties.put("properties.index.patterns", "test_partial_schema_table_*, test_partial_schema_table_*");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, properties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         catalog.getTable(new ObjectPath("docker-cluster", "test_partial_schema_table_*"));
 
         // then
@@ -567,7 +577,7 @@ public class ElasticCatalogTest {
         properties.put("properties.index.patterns", "test_partial_schema_table_*");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", "user", "password", url, properties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_partial_schema_table_*"));
 
         // then
