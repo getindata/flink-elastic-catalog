@@ -13,5 +13,5 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-org.apache.flink.connector.jdbc2.table.JdbcDynamicTableFactory
-org.apache.flink.connector.jdbc2.catalog.factory.JdbcCatalogFactory
+com.getindata.flink.connector.jdbc.table.JdbcDynamicTableFactory
+com.getindata.flink.connector.jdbc.catalog.factory.JdbcCatalogFactory

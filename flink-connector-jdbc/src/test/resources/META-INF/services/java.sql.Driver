@@ -13,7 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-org.apache.flink.connector.jdbc2.fakedb.driver.FakeDriver1
-org.apache.flink.connector.jdbc2.fakedb.driver.FakeDriver2
+com.getindata.flink.connector.jdbc.fakedb.driver.FakeDriver1
+com.getindata.flink.connector.jdbc.fakedb.driver.FakeDriver2
 # Comment intentionally for unregistered driver
 # org.apache.flink.connector.jdbc2.fakedb.driver.FakeDriver3
