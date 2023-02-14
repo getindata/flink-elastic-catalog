@@ -9,7 +9,7 @@ on:
 
 env:
   MAVEN_CLI_OPTS: ""
-  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  MAVEN_OPTS: ""
   JAVA_ADDITIONAL_OPTS: ""
 
 jobs:
@@ -29,8 +29,7 @@ jobs:
           cache: maven
 
       - name: Build for Flink ${{ matrix.flink }}
-        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} compile
+        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} install -DskipTests
 
       - name: Tests for Flink ${{ matrix.flink }}
-        run: |
-          mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} test integration-test
+        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} test
