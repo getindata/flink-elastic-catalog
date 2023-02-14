@@ -1,0 +1,36 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release/**'
+  pull_request:
+
+env:
+  MAVEN_CLI_OPTS: ""
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  JAVA_ADDITIONAL_OPTS: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flink: [ "1.15.1" ]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+          cache: maven
+
+      - name: Build for Flink ${{ matrix.flink }}
+        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} compile
+
+      - name: Tests for Flink ${{ matrix.flink }}
+        run: |
+          mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} test integration-test
