@@ -5,13 +5,13 @@
     <parent>
         <groupId>com.getindata</groupId>
         <artifactId>flink-elastic-catalog-parent</artifactId>
-        <version>0.0.1</version>
+        <version>0.0.2-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>flink-elastic-catalog</artifactId>
-    <version>0.0.1</version>
+    <version>0.0.2-SNAPSHOT</version>
 
     <name>flink-elastic-catalog</name>
     <description>Flink Catalog for Elastic.</description>
