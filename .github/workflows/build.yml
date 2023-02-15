@@ -8,8 +8,14 @@ on:
   pull_request:
 
 env:
-  MAVEN_CLI_OPTS: ""
-  MAVEN_OPTS: ""
+  # Without "-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false" maven tend to fail due to the following error:
+  #     Failed to read artifact descriptor for <some artifact>:
+  #     Could not transfer artifact <some artifact> from/to central (https://repo.maven.apache.org/maven2):
+  #     transfer failed for https://repo.maven.apache.org/maven2/<some artifact>: Connection timed out (Read failed)
+  # More precisely, mvn fails to fetch the first dependency from a maven repo after a longer pause between two
+  # consecutive fetches (e.g. when there were tests running for at last several minutes).
+  # See: https://stackoverflow.com/a/58769870
+  MAVEN_CLI_OPTS: "-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false"
   JAVA_ADDITIONAL_OPTS: ""
 
 jobs:
