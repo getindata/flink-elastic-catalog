@@ -70,7 +70,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
                           String password,
                           String baseUrl,
                           Map<String, String> properties) {
-        super(catalogName, defaultDatabase, username, password, baseUrl);
+        super(catalogName, defaultDatabase, username, password, baseUrl, baseUrl);
         this.dialectTypeMapper = new ElasticTypeMapper();
         String[] catalogDefaultScanProperties = extractCatalogDefaultScanProperties(properties);
         this.indexPatterns = extractIndexPatterns(properties);
