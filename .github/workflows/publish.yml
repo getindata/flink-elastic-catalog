@@ -1,0 +1,58 @@
+name: Publish
+
+on:
+  release:
+    types: [published]
+
+env:
+  # Without "-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false" maven tend to fail due to the following error:
+  #     Failed to read artifact descriptor for <some artifact>:
+  #     Could not transfer artifact <some artifact> from/to central (https://repo.maven.apache.org/maven2):
+  #     transfer failed for https://repo.maven.apache.org/maven2/<some artifact>: Connection timed out (Read failed)
+  # More precisely, mvn fails to fetch the first dependency from a maven repo after a longer pause between two
+  # consecutive fetches (e.g. when there were tests running for at last several minutes).
+  # See: https://stackoverflow.com/a/58769870
+  MAVEN_CLI_OPTS: "-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false"
+  JAVA_ADDITIONAL_OPTS: ""
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Check release tag match  # ... and fail fast if they do not
+        run: diff <(echo "${{ github.ref_name }}") <(echo "$(mvn -B help:evaluate -Dexpression=project.version -q -DforceStdout)")
+
+      - name: Set up JDK 8
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+          cache: maven
+
+      - name: Build
+        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS install -DskipTests
+
+      - name: Tests
+        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS test
+
+      - name: Set up Apache Maven Central
+        uses: actions/setup-java@v3
+        with:
+          java-version: '8'
+          distribution: 'adopt'
+          server-id: ossrh
+          server-username: SONATYPE_USERNAME
+          server-password: SONATYPE_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: GPG_PRIVATE_KEY_PASSWORD
+
+      - name: Publish to Apache Maven Central
+        if: github.event.release
+        # Deploy only flink-elastic-catalog
+        run: mvn -f flink-elastic-catalog/pom.xml deploy -P release -DskipTests
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          GPG_PRIVATE_KEY_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
