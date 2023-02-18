@@ -19,14 +19,8 @@ RUN apt-get update -y && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Fetch flink-sql-runner scripts and examples.
-RUN wget https://github.com/getindata/flink-sql-emr-runner/archive/refs/heads/main.zip -O /opt/main.zip
-RUN unzip /opt/main.zip -d /opt && mv /opt/flink-sql-emr-runner-main /opt/flink-sql-runner
-
 # Install PyFlink and other necessary dependencies.
 RUN python3 -m pip install \
-    -r /opt/flink-sql-runner/deployment-scripts/jobs-deployment/requirements.txt \
-    -r /opt/flink-sql-runner/python/requirements.txt \
     apache-flink==${FLINK_VERSION} \
     apache-flink-libraries==${FLINK_VERSION}
 
@@ -36,8 +30,13 @@ RUN python3 -m pip install typing-extensions --upgrade || true
 
 ENV FLINK_LIB_DIR /opt/flink/lib
 
+# Copy Flink dependencies
+RUN wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-jdbc/3.0.0-1.16/flink-connector-jdbc-3.0.0-1.16.jar \
+    -O ${FLINK_LIB_DIR}/flink-connector-jdbc-3.0.0-1.16.jar
+
 # Copy elastic dependencies for Flink
-COPY flink-elastic-catalog/target/flink-elastic-catalog-*.jar ${FLINK_LIB_DIR}
-COPY flink-elastic-dialect/target/flink-elastic-dialect-*.jar ${FLINK_LIB_DIR}
 RUN wget https://repo1.maven.org/maven2/org/elasticsearch/plugin/x-pack-sql-jdbc/${ELASTIC_VERSION}/x-pack-sql-jdbc-${ELASTIC_VERSION}.jar \
     -O ${FLINK_LIB_DIR}/x-pack-sql-jdbc-${ELASTIC_VERSION}.jar
+COPY flink-elastic-catalog/target/flink-elastic-catalog-*.jar ${FLINK_LIB_DIR}
+COPY flink-elastic-dialect/target/flink-elastic-dialect-*.jar ${FLINK_LIB_DIR}
+

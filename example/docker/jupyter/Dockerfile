@@ -28,8 +28,16 @@ ENV PYFLINK_LIB_DIR /opt/conda/lib/python3.8/site-packages/pyflink/lib
 COPY example/docker/jupyter/jupyter_notebook_config.py /home/jovyan/.jupyter/
 COPY example/docker/jupyter/jupyter_server_config.py /home/jovyan/.jupyter/
 
+# Copy Flink dependencies
+RUN wget https://repo1.maven.org/maven2/org/apache/flink/flink-connector-jdbc/3.0.0-1.16/flink-connector-jdbc-3.0.0-1.16.jar \
+    -O ${PYFLINK_LIB_DIR}/flink-connector-jdbc-3.0.0-1.16.jar
+
 # Copy/download Flink extra dependencies
-COPY flink-elastic-catalog/target/flink-elastic-catalog-*.jar $PYFLINK_LIB_DIR
-COPY flink-elastic-dialect/target/flink-elastic-dialect-*.jar $PYFLINK_LIB_DIR
 RUN wget https://repo1.maven.org/maven2/org/elasticsearch/plugin/x-pack-sql-jdbc/${ELASTIC_VERSION}/x-pack-sql-jdbc-${ELASTIC_VERSION}.jar \
     -O $PYFLINK_LIB_DIR/x-pack-sql-jdbc-${ELASTIC_VERSION}.jar
+COPY flink-elastic-catalog/target/flink-elastic-catalog-*.jar $PYFLINK_LIB_DIR
+COPY flink-elastic-dialect/target/flink-elastic-dialect-*.jar $PYFLINK_LIB_DIR
+
+
+# Copy notebook
+COPY example/elastic-catalog-example-notebook.ipynb /home/jovyan/

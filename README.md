@@ -100,5 +100,19 @@ If only 1 option is provided we will receive an error.
 
 # Internals
 
-In order to fix jdbc url validation, the project contains clones of `AbstractJdbcCatalog` and `JdbcCatalogUtils`.
+## flink-connector-jdbc
+
+The project contains clones of `AbstractJdbcCatalog` and `JdbcCatalogUtils`. `AbstractJdbcCatalog` differs only by
+constructor in which `baseUrl` and `defaultUrl` are set differently.
+
+```java
+this.baseUrl = baseUrl;
+this.defaultUrl = this.baseUrl;
+```
+
+`JdbcCatalogUtils` differs on jdbc url validation condition.
+
+```java
+checkArgument(parts.length == 2 || parts.length == 3);
+```
 
