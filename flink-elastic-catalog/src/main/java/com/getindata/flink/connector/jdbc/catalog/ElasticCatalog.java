@@ -29,6 +29,7 @@ import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 import org.apache.flink.table.types.DataType;
 import org.elasticsearch.xpack.sql.jdbc.EsDriver;
+import com.getindata.flink.connector.jdbc.table.JdbcDynamicTableFactory;
 import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_COLUMN;
 import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_LOWER_BOUND;
 import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_NUM;
@@ -354,7 +355,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
 
     private Map<String, String> createPropertiesMap(String tableName, ScanPartitionProperties scanProperties) {
         Map<String, String> properties = new HashMap<>();
-        properties.put(CONNECTOR.key(), ElasticJdbcCatalogFactoryOptions.IDENTIFIER);
+        properties.put(CONNECTOR.key(), JdbcDynamicTableFactory.IDENTIFIER);
         properties.put(URL.key(), baseUrl);
         properties.put(ElasticJdbcCatalogFactoryOptions.USERNAME.key(), username);
         properties.put(ElasticJdbcCatalogFactoryOptions.PASSWORD.key(), pwd);
