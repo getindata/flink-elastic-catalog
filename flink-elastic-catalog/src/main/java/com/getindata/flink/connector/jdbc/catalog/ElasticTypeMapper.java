@@ -1,12 +1,12 @@
 package com.getindata.flink.connector.jdbc.catalog;
 
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-
-import com.getindata.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;
+import org.apache.flink.connector.jdbc.dialect.JdbcDialectTypeMapper;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.types.DataType;
+
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 
 public class ElasticTypeMapper implements JdbcDialectTypeMapper {
 

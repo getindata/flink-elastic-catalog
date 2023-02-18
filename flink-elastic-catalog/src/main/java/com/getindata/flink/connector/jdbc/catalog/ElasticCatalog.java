@@ -1,5 +1,20 @@
 package com.getindata.flink.connector.jdbc.catalog;
 
+import com.getindata.flink.connector.jdbc.catalog.factory.ElasticJdbcCatalogFactoryOptions;
+import org.apache.commons.compress.utils.Lists;
+import org.apache.flink.connector.jdbc.table.JdbcDynamicTableFactory;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.Schema;
+import org.apache.flink.table.catalog.CatalogBaseTable;
+import org.apache.flink.table.catalog.CatalogTable;
+import org.apache.flink.table.catalog.ObjectPath;
+import org.apache.flink.table.catalog.UniqueConstraint;
+import org.apache.flink.table.catalog.exceptions.CatalogException;
+import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
+import org.apache.flink.table.catalog.exceptions.TableNotExistException;
+import org.apache.flink.table.types.DataType;
+import org.elasticsearch.xpack.sql.jdbc.EsDriver;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -17,25 +32,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.compress.utils.Lists;
-import org.apache.flink.table.api.DataTypes;
-import org.apache.flink.table.api.Schema;
-import org.apache.flink.table.catalog.CatalogBaseTable;
-import org.apache.flink.table.catalog.CatalogTable;
-import org.apache.flink.table.catalog.ObjectPath;
-import org.apache.flink.table.catalog.UniqueConstraint;
-import org.apache.flink.table.catalog.exceptions.CatalogException;
-import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
-import org.apache.flink.table.catalog.exceptions.TableNotExistException;
-import org.apache.flink.table.types.DataType;
-import org.elasticsearch.xpack.sql.jdbc.EsDriver;
-import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_COLUMN;
-import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_LOWER_BOUND;
-import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_NUM;
-import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_UPPER_BOUND;
-import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.TABLE_NAME;
-import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.URL;
 import static java.lang.String.format;
+import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_COLUMN;
+import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_LOWER_BOUND;
+import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_NUM;
+import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_UPPER_BOUND;
+import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.TABLE_NAME;
+import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.URL;
 import static org.apache.flink.table.factories.FactoryUtil.CONNECTOR;
 
 
@@ -56,21 +59,23 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     private final Map<String, ScanPartitionProperties> scanPartitionProperties;
     private final List<String> indexPatterns;
 
-    public ElasticCatalog(String catalogName,
+    public ElasticCatalog(ClassLoader userClassLoader,
+                          String catalogName,
                           String defaultDatabase,
                           String username,
                           String password,
                           String baseUrl) {
-        this(catalogName, defaultDatabase, username, password, baseUrl, new HashMap<>());
+        this(userClassLoader, catalogName, defaultDatabase, username, password, baseUrl, new HashMap<>());
     }
 
-    public ElasticCatalog(String catalogName,
+    public ElasticCatalog(ClassLoader userClassLoader,
+        String catalogName,
                           String defaultDatabase,
                           String username,
                           String password,
                           String baseUrl,
                           Map<String, String> properties) {
-        super(catalogName, defaultDatabase, username, password, baseUrl, baseUrl);
+        super(userClassLoader, catalogName, defaultDatabase, username,password, baseUrl);
         this.dialectTypeMapper = new ElasticTypeMapper();
         String[] catalogDefaultScanProperties = extractCatalogDefaultScanProperties(properties);
         this.indexPatterns = extractIndexPatterns(properties);
@@ -354,7 +359,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
 
     private Map<String, String> createPropertiesMap(String tableName, ScanPartitionProperties scanProperties) {
         Map<String, String> properties = new HashMap<>();
-        properties.put(CONNECTOR.key(), ElasticJdbcCatalogFactoryOptions.IDENTIFIER);
+        properties.put(CONNECTOR.key(), JdbcDynamicTableFactory.IDENTIFIER);
         properties.put(URL.key(), baseUrl);
         properties.put(ElasticJdbcCatalogFactoryOptions.USERNAME.key(), username);
         properties.put(ElasticJdbcCatalogFactoryOptions.PASSWORD.key(), pwd);
@@ -404,7 +409,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         return indexPatterns;
     }
 
-    static class ScanPartitionProperties {
+    public static class ScanPartitionProperties {
         private String partitionColumnName;
         private Integer partitionNumber;
         private Long scanPartitionLowerBound;
