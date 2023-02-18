@@ -34,7 +34,10 @@ RUN python3 -m pip install \
 # FIXME
 RUN python3 -m pip install typing-extensions --upgrade || true
 
+ENV FLINK_LIB_DIR /opt/flink/lib
+
 # Copy elastic dependencies for Flink
-COPY flink-elastic-catalog/target/flink-elastic-catalog-*.jar /opt/flink/lib/
+COPY flink-elastic-catalog/target/flink-elastic-catalog-*.jar ${FLINK_LIB_DIR}
+COPY flink-elastic-dialect/target/flink-elastic-dialect-*.jar ${FLINK_LIB_DIR}
 RUN wget https://repo1.maven.org/maven2/org/elasticsearch/plugin/x-pack-sql-jdbc/${ELASTIC_VERSION}/x-pack-sql-jdbc-${ELASTIC_VERSION}.jar \
-    -O /opt/flink/lib/x-pack-sql-jdbc-${ELASTIC_VERSION}.jar
+    -O ${FLINK_LIB_DIR}/x-pack-sql-jdbc-${ELASTIC_VERSION}.jar
