@@ -7,7 +7,7 @@ services:
       context: ../../
       dockerfile: ./example/docker/jupyter/Dockerfile
       args:
-      - FLINK_VERSION=1.15.1
+      - FLINK_VERSION=1.16.1
       - ELASTIC_VERSION=8.3.3
     ports:
       - 8888:8888
@@ -73,7 +73,7 @@ services:
       context: ../../
       dockerfile: ./example/docker/flink/Dockerfile
       args:
-      - FLINK_VERSION=1.15.1
+      - FLINK_VERSION=1.16.1
       - ELASTIC_VERSION=8.3.3
     command: sleep infinity
     environment:
@@ -86,7 +86,7 @@ services:
       context: ../../
       dockerfile: ./example/docker/flink/Dockerfile
       args:
-      - FLINK_VERSION=1.15.1
+      - FLINK_VERSION=1.16.1
       - ELASTIC_VERSION=8.3.3
     expose:
       - "6123"
@@ -97,7 +97,7 @@ services:
       - AWS_ACCESS_KEY_ID=flink-sql-runner
       - AWS_SECRET_ACCESS_KEY=secretkey
       - AWS_S3_ENDPOINT=http://minio:9000
-      - ENABLE_BUILT_IN_PLUGINS=flink-s3-fs-hadoop-1.15.1.jar
+      - ENABLE_BUILT_IN_PLUGINS=flink-s3-fs-hadoop-1.16.1.jar
       - JOB_MANAGER_RPC_ADDRESS=jobmanager
       - |
         FLINK_PROPERTIES=
@@ -111,7 +111,7 @@ services:
       context: ../../
       dockerfile: ./example/docker/flink/Dockerfile
       args:
-      - FLINK_VERSION=1.15.1
+      - FLINK_VERSION=1.16.1
       - ELASTIC_VERSION=8.3.3
     expose:
       - "6121"
@@ -125,7 +125,7 @@ services:
       - AWS_ACCESS_KEY_ID=flink-sql-runner
       - AWS_SECRET_ACCESS_KEY=secretkey
       - AWS_S3_ENDPOINT=http://minio:9000
-      - ENABLE_BUILT_IN_PLUGINS=flink-s3-fs-hadoop-1.15.1.jar
+      - ENABLE_BUILT_IN_PLUGINS=flink-s3-fs-hadoop-1.16.1.jar
       - |
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager

@@ -35,6 +35,5 @@ Jupyter UI can be accessed at `http://localhost:8888`.
 
 ## Run ad-hoc batch query on Jupyter Notebook
 
-Open Jupyter Notebooks UI on your local browser `http://localhost:8888`,
-upload `example/elastic-catalog-example-notebook.ipynb` notebook and run the cells one by one. The notebook shows how to
-explore elastic schema and run SQL queries.
+Open Jupyter Notebooks UI on your local browser `http://localhost:8888`, open `elastic-catalog-example-notebook.ipynb`
+notebook and run the cells one by one. The notebook shows how to explore elastic schema and run SQL queries.
