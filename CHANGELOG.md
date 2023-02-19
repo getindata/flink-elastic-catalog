@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Fix connector identifier passed to the table definition.
+
 ## [0.0.1] - 2023-02-15
 
 -   Initial implementation of Flink Catalog for Elastic
