@@ -48,9 +48,16 @@ jobs:
           gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
           gpg-passphrase: GPG_PRIVATE_KEY_PASSWORD
 
-      - name: Publish to Apache Maven Central
+      - name: Publish flink-elastic-dialect to Apache Maven Central
         if: github.event.release
-        # Deploy only flink-elastic-catalog
+        run: mvn -f flink-elastic-dialect/pom.xml deploy -P release -DskipTests
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          GPG_PRIVATE_KEY_PASSWORD: ${{ secrets.GPG_PRIVATE_KEY_PASSWORD }}
+
+      - name: Publish flink-elastic-catalog to Apache Maven Central
+        if: github.event.release
         run: mvn -f flink-elastic-catalog/pom.xml deploy -P release -DskipTests
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
