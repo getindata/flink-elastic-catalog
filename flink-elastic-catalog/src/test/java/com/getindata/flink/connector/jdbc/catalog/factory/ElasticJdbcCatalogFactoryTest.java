@@ -26,6 +26,7 @@ public class ElasticJdbcCatalogFactoryTest {
     @BeforeClass
     public static void setup() {
         container.withEnv("xpack.security.enabled", "false");
+        container.withEnv("ES_JAVA_OPTS", "-Xms1g -Xmx1g");
         container.start();
 
         catalogFactory = new ElasticJdbcCatalogFactory();
