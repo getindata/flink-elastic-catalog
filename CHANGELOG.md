@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+-   Use official flink-connector-jdbc instead of a custom fork.
+-   Add flink-elastic-dialect module.
+
 ## [0.0.1] - 2023-02-15
 
 -   Initial implementation of Flink Catalog for Elastic
