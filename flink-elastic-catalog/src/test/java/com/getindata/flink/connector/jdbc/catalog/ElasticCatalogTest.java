@@ -1,11 +1,5 @@
 package com.getindata.flink.connector.jdbc.catalog;
 
-import okhttp3.Credentials;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -17,15 +11,10 @@ import org.apache.flink.table.types.AbstractDataType;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -33,8 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class ElasticCatalogTest {
-    private static final ElasticsearchTestContainer container = new ElasticsearchTestContainer();
+public class ElasticCatalogTest extends ElasticCatalogTestBase {
     private static final String INPUT_SINGLE_RECORD_TABLE = "test_single_record_table";
     private static final String INPUT_MULTIPLE_RECORDS_TABLE = "test_multiple_records_table";
     private static final String INPUT_MISSING_DATE_COL_TABLE = "test_missing_date_col_table";
@@ -60,18 +48,10 @@ public class ElasticCatalogTest {
     private static final String PARTIAL_SCHEMA_PATH_2 = "elastic/test-index-partial2.json";
     private static final String SPECIAL_CHARACTER_COLUMN_NAMES_INDEX_PATH = "elastic/test-special-character-column-names-index.json";
 
-    private static final String USERNAME = "elastic";
-    private static final String PASSWORD = "password";
-
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-        container.withEnv("xpack.security.enabled", "true");
-        container.withEnv("ELASTIC_PASSWORD", PASSWORD);
-        container.withEnv("ES_JAVA_OPTS", "-Xms1g -Xmx1g");
-        container.start();
-        Class.forName(container.getDriverClassName());
-        enableTrial();
+        ElasticCatalogTestBase.beforeAll();
         createTestIndex(INPUT_SINGLE_RECORD_TABLE, INDEX_PATH);
         createTestIndex(INPUT_MULTIPLE_RECORDS_TABLE, INDEX_PATH);
         createTestIndex(INPUT_MISSING_DATE_COL_TABLE, MISSING_DATE_COL_INDEX_PATH);
@@ -88,63 +68,6 @@ public class ElasticCatalogTest {
         addTestData(INPUT_PARTIAL_SCHEMA_TABLE_2, INPUT_PARTIAL_SCHEMA_EVENTS_PATH_2);
         addTestData(INPUT_EMPTY_TABLE, INPUT_NO_EVENTS_PATH);
         addTestData(INPUT_SPECIAL_CHARACTER_COLUMN_NAMES_TABLE, INPUT_SPECIAL_CHARACTER_COLUMN_NAMES_PATH);
-    }
-
-    private static void enableTrial() throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder()
-                .url(String.format("http://%s:%d/_license/start_trial?acknowledge=true",
-                        container.getHost(), container.getElasticPort()))
-                .post(RequestBody.create(new byte[]{}))
-                .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
-                .build();
-        try (Response response = client.newCall(request).execute()) {
-            assertTrue(response.isSuccessful());
-        }
-    }
-
-    private static void createTestIndex(String inputTable, String indexPath) throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder()
-                .url(String.format("http://%s:%d/%s/", container.getHost(),
-                        container.getElasticPort(), inputTable))
-                .put(RequestBody.create(loadResource(indexPath)))
-                .addHeader("Content-Type", "application/json")
-            .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
-                .build();
-        try (Response response = client.newCall(request).execute()) {
-            assertTrue(response.isSuccessful());
-        }
-    }
-
-    private static void addTestData(String inputTable, String inputPath) throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder()
-                .url(String.format("http://%s:%d/%s/_bulk/", container.getHost(),
-                        container.getElasticPort(), inputTable))
-                .post(RequestBody.create(loadResource(inputPath)))
-                .addHeader("Content-Type", "application/json")
-            .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
-                .build();
-        client.newCall(request).execute();
-    }
-
-    private static byte[] loadResource(String path) throws IOException {
-        return IOUtils.toByteArray(
-                Objects.requireNonNull(ElasticCatalogTest.class.getClassLoader().getResourceAsStream(path))
-        );
-    }
-
-    private static String calculateExpectedTemporalLowerBound() {
-        // upper bound for temporal partition columns is the last milisecond of the current day
-        LocalDate todayDate = LocalDate.now();
-        return String.valueOf(todayDate.atTime(LocalTime.MIN).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli());
-    }
-
-    private static String calculateExpectedTemporalUpperBound() {
-        // upper bound for temporal partition columns is the last milisecond of the current day
-        LocalDate tomorrowDate = LocalDate.now().plusDays(1);
-        return String.valueOf(tomorrowDate.atTime(LocalTime.MIDNIGHT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1);
     }
 
     @Test
