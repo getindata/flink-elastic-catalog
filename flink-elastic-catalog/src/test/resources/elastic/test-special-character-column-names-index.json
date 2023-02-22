@@ -1,0 +1,12 @@
+{
+  "settings": {
+    "number_of_shards": 1
+  },
+  "mappings": {
+    "properties": {
+      "@timestamp": { "type": "date" },
+      "scores/grades": { "type": "float" },
+      "opinions&complaints": { "type": "text" }
+    }
+  }
+}
