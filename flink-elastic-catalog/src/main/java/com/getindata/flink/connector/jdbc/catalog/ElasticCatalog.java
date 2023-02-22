@@ -333,9 +333,9 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         try {
             String scanPartitionInfoQuery;
             if (isPartitionColumnTemporal) {
-                scanPartitionInfoQuery = format("SELECT COALESCE(MIN(%s), CURRENT_DATE) AS scanPartitionLowerBound, DATE_ADD('days', 1, CURRENT_DATE) AS scanPartitionUpperBound FROM \"%s\"", scanProperties.getPartitionColumnName(), tableName);
+                scanPartitionInfoQuery = format("SELECT COALESCE(MIN(\"%s\"), CURRENT_DATE) AS scanPartitionLowerBound, DATE_ADD('days', 1, CURRENT_DATE) AS scanPartitionUpperBound FROM \"%s\"", scanProperties.getPartitionColumnName(), tableName);
             } else {
-                scanPartitionInfoQuery = format("SELECT MIN(%s) AS scanPartitionLowerBound, MAX(%s) AS scanPartitionUpperBound FROM \"%s\"", scanProperties.getPartitionColumnName(), scanProperties.getPartitionColumnName(), tableName);
+                scanPartitionInfoQuery = format("SELECT MIN(\"%s\") AS scanPartitionLowerBound, MAX(%s) AS scanPartitionUpperBound FROM \"%s\"", scanProperties.getPartitionColumnName(), scanProperties.getPartitionColumnName(), tableName);
             }
             PreparedStatement preparedStatement = conn.prepareStatement(scanPartitionInfoQuery);
             ResultSet resultSet = preparedStatement.executeQuery();
