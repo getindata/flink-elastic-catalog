@@ -415,30 +415,37 @@ public class ElasticCatalogTest extends ElasticCatalogTestBase {
         // then
         List<String> tables = catalog.listTables("docker-cluster");
         Schema schema = table.getUnresolvedSchema();
+
         Schema expectedSchema = Schema.newBuilder().fromFields(
-                new String[]{"long_col", "wildcard_col", "binary_col", "constant_keyword_col", "ip_col", "boolean_col", "half_float_col", "text_multifield_col", "version_col", "date_col", "float_col", "scaled_float_col", "unsigned_long_col", "keyword_col", "date_epoch_col", "byte_col", "date_nanos_col", "integer_col", "text_col", "double_col", "short_col"},
+                new String[]{"binary_col", "boolean_col", "byte_col",
+                    "constant_keyword_col", "date_col", "date_epoch_col",
+                    "date_nanos_col", "double_col", "float_col",
+                    "half_float_col", "integer_col", "ip_col",
+                    "keyword_col", "long_col", "scaled_float_col",
+                    "short_col", "text_col", "text_multifield_col",
+                    "unsigned_long_col", "version_col", "wildcard_col"},
                 new AbstractDataType[]{
-                        DataTypes.BIGINT(),
-                        DataTypes.STRING(),
-                        DataTypes.STRING(),
-                        DataTypes.STRING(),
                         DataTypes.STRING(),
                         DataTypes.BOOLEAN(),
-                        DataTypes.FLOAT(),
-                        DataTypes.STRING(),
-                        DataTypes.STRING(),
-                        DataTypes.TIMESTAMP(6),
-                        DataTypes.FLOAT(),
-                        DataTypes.DOUBLE(),
-                        DataTypes.BIGINT(),
-                        DataTypes.STRING(),
-                        DataTypes.TIMESTAMP(6),
                         DataTypes.TINYINT(),
+                        DataTypes.STRING(),
                         DataTypes.TIMESTAMP(6),
+                        DataTypes.TIMESTAMP(6),
+                        DataTypes.TIMESTAMP(6),
+                        DataTypes.DOUBLE(),
+                        DataTypes.FLOAT(),
+                        DataTypes.FLOAT(),
                         DataTypes.INT(),
                         DataTypes.STRING(),
+                        DataTypes.STRING(),
+                        DataTypes.BIGINT(),
                         DataTypes.DOUBLE(),
                         DataTypes.SMALLINT(),
+                        DataTypes.STRING(),
+                        DataTypes.STRING(),
+                        DataTypes.BIGINT(),
+                        DataTypes.STRING(),
+                        DataTypes.STRING()
                 }).build();
         assertEquals(9, tables.size());
         assertNotNull(table);
@@ -519,17 +526,17 @@ public class ElasticCatalogTest extends ElasticCatalogTestBase {
         ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_partial_schema_table_*"));
 
-        // then
         Schema expectedSchema = Schema.newBuilder().fromFields(
-                new String[]{"keyword_col", "ip_col", "integer_col", "double_col", "short_col", "version_col", "date_col"},
-                new AbstractDataType[]{
-                        DataTypes.STRING(),
-                        DataTypes.STRING(),
-                        DataTypes.INT(),
-                        DataTypes.DOUBLE(),
-                        DataTypes.SMALLINT(),
-                        DataTypes.STRING(),
-                        DataTypes.TIMESTAMP(6)}).build();
+            new String[]{"date_col", "double_col", "integer_col", "ip_col", "keyword_col", "short_col", "version_col"},
+            new AbstractDataType[]{
+                DataTypes.TIMESTAMP(6),
+                DataTypes.DOUBLE(),
+                DataTypes.INT(),
+                DataTypes.STRING(),
+                DataTypes.STRING(),
+                DataTypes.SMALLINT(),
+                DataTypes.STRING()}).build();
+        // then
         String expectedUpperBound = calculateExpectedTemporalUpperBound();
         Schema schema = table.getUnresolvedSchema();
         List<String> tables = catalog.listTables("docker-cluster");
@@ -564,5 +571,27 @@ public class ElasticCatalogTest extends ElasticCatalogTestBase {
         assertEquals("10", table.getOptions().get("scan.partition.num"));
         assertEquals("1420114230000", table.getOptions().get("scan.partition.lower-bound"));
         assertEquals(expectedUpperBound, table.getOptions().get("scan.partition.upper-bound"));
+    }
+
+    @Test
+    public void testPreservesColumnsOrder() throws TableNotExistException {
+        // given
+        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
+            container.getElasticPort());
+
+        // when
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url);
+
+        // then
+        String[] actualColumnNames = catalog.getTable(new ObjectPath("docker-cluster", "test_single_record_table"))
+            .getUnresolvedSchema()
+            .getColumns()
+            .stream()
+            .map(Schema.UnresolvedColumn::getName)
+            .toArray(String[]::new);
+        for (int i = 0; i < actualColumnNames.length - 1; ++i) {
+            // Elastic driver returns columns in alphabetical order.
+            assertTrue(actualColumnNames[i].compareTo(actualColumnNames[i + 1]) < 0);
+        }
     }
 }
