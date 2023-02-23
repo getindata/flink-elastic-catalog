@@ -15,6 +15,7 @@ import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertTrue;
 
@@ -25,7 +26,8 @@ class ElasticCatalogTestBase {
     protected static final String USERNAME = "elastic";
     protected static final String PASSWORD = "password";
 
-    private static boolean wasTrialEnabled = false;
+    private static final int REQUEST_RETRY_MAX_COUNT = 3;
+    private static final int TIMEOUT_IN_SECONDS = 3;
 
     @BeforeClass
     public static void beforeAll() throws Exception {
@@ -33,7 +35,10 @@ class ElasticCatalogTestBase {
         container.withEnv("ELASTIC_PASSWORD", PASSWORD);
         container.withEnv("ES_JAVA_OPTS", "-Xms1g -Xmx1g");
         container.start();
-        enableTrial();
+        TimeUnit.SECONDS.sleep(TIMEOUT_IN_SECONDS);
+        if (!isTrialEnabled()) {
+            enableTrial();
+        }
         catalogFactory = new ElasticJdbcCatalogFactory();
 
         url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
@@ -48,13 +53,26 @@ class ElasticCatalogTestBase {
                 .post(RequestBody.create(new byte[]{}))
                 .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
                 .build();
-        if (wasTrialEnabled) {
-            return;
-        }
         try (Response response = client.newCall(request).execute()) {
             assertTrue(response.isSuccessful());
-            wasTrialEnabled = true;
         }
+    }
+
+    private static boolean isTrialEnabled() throws Exception {
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url(String.format("http://%s:%d/_license",
+                        container.getHost(), container.getElasticPort()))
+                .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
+                .build();
+        for (int i = 0; i < REQUEST_RETRY_MAX_COUNT; i++) {
+            Response response = client.newCall(request).execute();
+            if (response.code() == 200) {
+                return response.body().string().contains("\"type\" : \"trial\"");
+            }
+            TimeUnit.SECONDS.sleep(TIMEOUT_IN_SECONDS);
+        }
+        return false;
     }
 
     protected Map<String, String> getCommonOptions() {
