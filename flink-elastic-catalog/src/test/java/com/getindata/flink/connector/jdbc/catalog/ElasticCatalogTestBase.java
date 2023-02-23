@@ -25,6 +25,8 @@ class ElasticCatalogTestBase {
     protected static final String USERNAME = "elastic";
     protected static final String PASSWORD = "password";
 
+    private static boolean wasTrialEnabled = false;
+
     @BeforeClass
     public static void beforeAll() throws Exception {
         container.withEnv("xpack.security.enabled", "true");
@@ -46,8 +48,12 @@ class ElasticCatalogTestBase {
                 .post(RequestBody.create(new byte[]{}))
                 .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
                 .build();
+        if (wasTrialEnabled) {
+            return;
+        }
         try (Response response = client.newCall(request).execute()) {
             assertTrue(response.isSuccessful());
+            wasTrialEnabled = true;
         }
     }
 
