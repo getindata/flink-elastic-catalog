@@ -6,6 +6,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.commons.compress.utils.IOUtils;
+import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.junit.BeforeClass;
 
 import java.io.IOException;
@@ -67,12 +68,16 @@ class ElasticCatalogTestBase {
                 .build();
         for (int i = 0; i < REQUEST_RETRY_MAX_COUNT; i++) {
             Response response = client.newCall(request).execute();
-            if (response.code() == 200) {
+            int response_code = response.code();
+            if (response_code == 200) {
                 return response.body().string().contains("\"type\" : \"trial\"");
+            } else if (response_code == 404) {
+                TimeUnit.SECONDS.sleep(TIMEOUT_IN_SECONDS);
+            } else {
+                throw new CatalogException("Unexpected response retrieved from Elastic: " + response_code);
             }
-            TimeUnit.SECONDS.sleep(TIMEOUT_IN_SECONDS);
         }
-        return false;
+        throw new CatalogException("Ran out of retries trying to retrieve 200 status from Elastic!");
     }
 
     protected Map<String, String> getCommonOptions() {
