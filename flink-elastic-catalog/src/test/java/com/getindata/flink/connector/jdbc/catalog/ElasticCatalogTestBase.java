@@ -6,7 +6,6 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.commons.compress.utils.IOUtils;
-import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.junit.BeforeClass;
 
 import java.io.IOException;
@@ -66,6 +65,12 @@ class ElasticCatalogTestBase {
                         container.getHost(), container.getElasticPort()))
                 .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
                 .build();
+        /**
+         * According to the docs of ElasticSearch:
+         * https://www.elastic.co/guide/en/elasticsearch/reference/current/get-license.html#:~:text=If%20you%20receive%20an%20unexpected%20404%20response%20after%20cluster%20startup%2C%20wait%20a%20short%20period%20and%20retry%20the%20request.
+         * If master node is generating a new cluster state we can receive response code 404.
+         * We should make a retries until we receive response code 200.
+         */
         for (int i = 0; i < REQUEST_RETRY_MAX_COUNT; i++) {
             Response response = client.newCall(request).execute();
             int response_code = response.code();
@@ -74,10 +79,10 @@ class ElasticCatalogTestBase {
             } else if (response_code == 404) {
                 TimeUnit.SECONDS.sleep(TIMEOUT_IN_SECONDS);
             } else {
-                throw new CatalogException("Unexpected response retrieved from Elastic: " + response_code);
+                throw new IllegalStateException("Unexpected response retrieved from Elastic: " + response_code);
             }
         }
-        throw new CatalogException("Ran out of retries trying to retrieve 200 status from Elastic!");
+        throw new IllegalStateException("Ran out of retries trying to retrieve 200 status from Elastic!");
     }
 
     protected Map<String, String> getCommonOptions() {
