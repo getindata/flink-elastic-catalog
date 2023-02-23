@@ -4,6 +4,7 @@
 
 -   Support partitioning for special character columns & Fix error in unit test.
 -   Add LIKE operator pushdown.
+-   Preserve columns order returned by Elastic driver.
 
 ## [0.0.2] - 2023-02-19
 

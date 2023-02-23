@@ -11,6 +11,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -274,7 +275,8 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
 
     private Map<String, DataType> retrieveColumns(ResultSetMetaData resultSetMetaData,
                                                   ObjectPath tablePath) throws SQLException {
-        Map<String, DataType> columns = new HashMap<>();
+        // Elastic driver returns columns in alphabetical order. LinkedHashMap preserves the order.
+        Map<String, DataType> columns = new LinkedHashMap<>();
 
         for (int i = 1; i <= resultSetMetaData.getColumnCount(); i++) {
             String columnName = resultSetMetaData.getColumnName(i);
