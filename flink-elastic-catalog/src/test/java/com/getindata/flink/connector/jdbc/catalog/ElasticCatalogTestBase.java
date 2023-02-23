@@ -73,13 +73,13 @@ class ElasticCatalogTestBase {
          */
         for (int i = 0; i < REQUEST_RETRY_MAX_COUNT; i++) {
             Response response = client.newCall(request).execute();
-            int response_code = response.code();
-            if (response_code == 200) {
+            int responseCode = response.code();
+            if (responseCode == 200) {
                 return response.body().string().contains("\"type\" : \"trial\"");
-            } else if (response_code == 404) {
+            } else if (responseCode == 404) {
                 TimeUnit.SECONDS.sleep(TIMEOUT_IN_SECONDS);
             } else {
-                throw new IllegalStateException("Unexpected response retrieved from Elastic: " + response_code);
+                throw new IllegalStateException("Unexpected response retrieved from Elastic: " + responseCode);
             }
         }
         throw new IllegalStateException("Ran out of retries trying to retrieve 200 status from Elastic!");
