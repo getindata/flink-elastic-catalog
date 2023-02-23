@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Support partitioning for special character columns & Fix error in unit test.
+
 ## [0.0.2] - 2023-02-19
 
 -   Fix connector identifier passed to the table definition.

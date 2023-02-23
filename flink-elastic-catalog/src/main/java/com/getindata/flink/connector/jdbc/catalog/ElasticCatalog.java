@@ -97,12 +97,12 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         // Splitting patterns and removing duplicates
 
         return Arrays.stream(
-                properties.getOrDefault("properties.index.patterns", "").split(",")
-            )
-            .map(String::trim)
-            .filter(e -> !e.isEmpty())
-            .distinct()
-            .collect(Collectors.toList());
+                        properties.getOrDefault("properties.index.patterns", "").split(",")
+                )
+                .map(String::trim)
+                .filter(e -> !e.isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     private Map<String, ScanPartitionProperties> extractScanTablePartitionProperties(Map<String, String> properties) {
@@ -113,12 +113,12 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
                 continue;
             }
             String tableName = key.replace("properties.scan.", "")
-                .replace(".partition.column.name", "")
-                .replace(".partition.number", "");
+                    .replace(".partition.column.name", "")
+                    .replace(".partition.number", "");
             boolean scanPropertiesForTableFound = scanPartitionProperties.containsKey(tableName);
             ScanPartitionProperties partitionProperties = scanPropertiesForTableFound
-                ? scanPartitionProperties.get(tableName)
-                : new ScanPartitionProperties();
+                    ? scanPartitionProperties.get(tableName)
+                    : new ScanPartitionProperties();
 
             if (entry.getKey().endsWith("partition.column.name")) {
                 if (partitionProperties.partitionColumnName == null) {
@@ -176,7 +176,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     public boolean tableExists(ObjectPath tablePath) throws CatalogException {
         try {
             return databaseExists(tablePath.getDatabaseName())
-                && listTables(tablePath.getDatabaseName()).contains(tablePath.getObjectName());
+                    && listTables(tablePath.getDatabaseName()).contains(tablePath.getObjectName());
         } catch (DatabaseNotExistException e) {
             return false;
         }
@@ -191,7 +191,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         try (Connection conn = DriverManager.getConnection(baseUrl, username, pwd)) {
             DatabaseMetaData metaData = conn.getMetaData();
             Optional<UniqueConstraint> primaryKey =
-                getPrimaryKey(metaData, null, getSchemaName(tablePath), getTableName(tablePath));
+                    getPrimaryKey(metaData, null, getSchemaName(tablePath), getTableName(tablePath));
 
             ResultSetMetaData resultSetMetaData = retrieveResultSetMetaData(conn, tablePath);
 
@@ -226,8 +226,8 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
 
     private boolean shouldTableBePartitioned(ScanPartitionProperties properties) {
         return properties != null ||
-            this.catalogDefaultScanPartitionColumnName != null ||
-            this.catalogDefaultScanPartitionCapacity != null;
+                this.catalogDefaultScanPartitionColumnName != null ||
+                this.catalogDefaultScanPartitionCapacity != null;
     }
 
     private void deducePartitionColumnName(ScanPartitionProperties properties, String tableName) {
@@ -268,7 +268,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     private void checkScanPartitionColumnType(DataType type) {
         if (!(isColumnNumeric(type) || isColumnTemporal(type))) {
             throw new CatalogException(
-                format("Partition column is of type %s. We support only NUMERIC, DATE and TIMESTAMP partition columns.", type));
+                    format("Partition column is of type %s. We support only NUMERIC, DATE and TIMESTAMP partition columns.", type));
         }
     }
 
@@ -298,22 +298,22 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     private Schema buildSchema(String[] columnNames, DataType[] types, Optional<UniqueConstraint> primaryKey) {
         Schema.Builder schemaBuilder = Schema.newBuilder().fromFields(columnNames, types);
         primaryKey.ifPresent(
-            pk -> schemaBuilder.primaryKeyNamed(pk.getName(), pk.getColumns()));
+                pk -> schemaBuilder.primaryKeyNamed(pk.getName(), pk.getColumns()));
         return schemaBuilder.build();
     }
 
     private boolean isColumnNumeric(DataType type) {
         return type.equals(DataTypes.TINYINT()) ||
-            type.equals(DataTypes.SMALLINT()) ||
-            type.equals(DataTypes.INT()) ||
-            type.equals(DataTypes.BIGINT()) ||
-            type.equals(DataTypes.FLOAT()) ||
-            type.equals(DataTypes.DOUBLE());
+                type.equals(DataTypes.SMALLINT()) ||
+                type.equals(DataTypes.INT()) ||
+                type.equals(DataTypes.BIGINT()) ||
+                type.equals(DataTypes.FLOAT()) ||
+                type.equals(DataTypes.DOUBLE());
     }
 
     private boolean isColumnTemporal(DataType type) {
         return type.equals(DataTypes.TIMESTAMP()) ||
-            type.equals(DataTypes.DATE());
+                type.equals(DataTypes.DATE());
     }
 
     private int calculatePartitionNumberBasedOnPartitionSize(Connection conn, String tableName) {
@@ -333,9 +333,9 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         try {
             String scanPartitionInfoQuery;
             if (isPartitionColumnTemporal) {
-                scanPartitionInfoQuery = format("SELECT COALESCE(MIN(%s), CURRENT_DATE) AS scanPartitionLowerBound, DATE_ADD('days', 1, CURRENT_DATE) AS scanPartitionUpperBound FROM \"%s\"", scanProperties.getPartitionColumnName(), tableName);
+                scanPartitionInfoQuery = format("SELECT COALESCE(MIN(\"%s\"), CURRENT_DATE) AS scanPartitionLowerBound, DATE_ADD('days', 1, CURRENT_DATE) AS scanPartitionUpperBound FROM \"%s\"", scanProperties.getPartitionColumnName(), tableName);
             } else {
-                scanPartitionInfoQuery = format("SELECT MIN(%s) AS scanPartitionLowerBound, MAX(%s) AS scanPartitionUpperBound FROM \"%s\"", scanProperties.getPartitionColumnName(), scanProperties.getPartitionColumnName(), tableName);
+                scanPartitionInfoQuery = format("SELECT MIN(\"%s\") AS scanPartitionLowerBound, MAX(%s) AS scanPartitionUpperBound FROM \"%s\"", scanProperties.getPartitionColumnName(), scanProperties.getPartitionColumnName(), tableName);
             }
             PreparedStatement preparedStatement = conn.prepareStatement(scanPartitionInfoQuery);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -452,9 +452,9 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
 
         public String toString() {
             return "partitionColumnName=" + partitionColumnName +
-                ", partitionNumber=" + partitionNumber +
-                ", scanPartitionLowerBound=" + scanPartitionLowerBound +
-                ", scanPartitionUpperBound=" + scanPartitionUpperBound;
+                    ", partitionNumber=" + partitionNumber +
+                    ", scanPartitionLowerBound=" + scanPartitionLowerBound +
+                    ", scanPartitionUpperBound=" + scanPartitionUpperBound;
         }
     }
 }

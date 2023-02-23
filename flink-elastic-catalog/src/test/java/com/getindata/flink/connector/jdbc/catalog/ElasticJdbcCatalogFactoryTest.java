@@ -5,10 +5,8 @@ import org.apache.flink.table.catalog.ObjectPath;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.factories.CatalogFactory.Context;
 import org.apache.flink.table.factories.FactoryUtil;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,23 +14,7 @@ import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-public class ElasticJdbcCatalogFactoryTest {
-    private static ElasticJdbcCatalogFactory catalogFactory;
-    private static String url;
-    private static final ElasticsearchTestContainer container = new ElasticsearchTestContainer();
-
-    @BeforeClass
-    public static void setup() {
-        container.withEnv("xpack.security.enabled", "false");
-        container.withEnv("ES_JAVA_OPTS", "-Xms1g -Xmx1g");
-        container.start();
-
-        catalogFactory = new ElasticJdbcCatalogFactory();
-
-        url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-    }
-
+public class ElasticJdbcCatalogFactoryTest extends ElasticCatalogTestBase {
     @Test
     public void testCreateElasticCatalogNoAdditionalOptions() {
         // given
@@ -114,14 +96,5 @@ public class ElasticJdbcCatalogFactoryTest {
         // then
         assertEquals(singletonList("example_table_*"), catalog.getIndexPatterns());
         assertTrue(catalog.tableExists(new ObjectPath("docker-cluster", "example_table_*")));
-    }
-
-    private Map<String, String> getCommonOptions() {
-        Map<String, String> options = new HashMap<>();
-        options.put("base-url", url);
-        options.put("default-database", "test-database");
-        options.put("password", "password");
-        options.put("username", "user");
-        return options;
     }
 }

@@ -1,11 +1,5 @@
 package com.getindata.flink.connector.jdbc.catalog;
 
-import okhttp3.Credentials;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
-import okhttp3.Response;
-import org.apache.commons.compress.utils.IOUtils;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.catalog.CatalogBaseTable;
@@ -15,18 +9,12 @@ import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 import org.apache.flink.table.types.AbstractDataType;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -34,8 +22,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-public class ElasticCatalogTest {
-    private static final ElasticsearchTestContainer container = new ElasticsearchTestContainer();
+public class ElasticCatalogTest extends ElasticCatalogTestBase {
     private static final String INPUT_SINGLE_RECORD_TABLE = "test_single_record_table";
     private static final String INPUT_MULTIPLE_RECORDS_TABLE = "test_multiple_records_table";
     private static final String INPUT_MISSING_DATE_COL_TABLE = "test_missing_date_col_table";
@@ -43,6 +30,7 @@ public class ElasticCatalogTest {
     private static final String INPUT_PARTIAL_SCHEMA_TABLE_1 = "test_partial_schema_table_1";
     private static final String INPUT_PARTIAL_SCHEMA_TABLE_2 = "test_partial_schema_table_2";
     private static final String INPUT_EMPTY_TABLE = "test_empty_table";
+    private static final String INPUT_SPECIAL_CHARACTER_COLUMN_NAMES_TABLE = "test_special_character_column_names_table";
 
     private static final String INPUT_SINGLE_EVENT_PATH = "elastic/single-input-event.json";
     private static final String INPUT_MULTIPLE_EVENTS_PATH = "elastic/multiple-input-events.json";
@@ -51,25 +39,19 @@ public class ElasticCatalogTest {
     private static final String INPUT_PARTIAL_SCHEMA_EVENTS_PATH_1 = "elastic/multiple-input-events-partial-1.json";
     private static final String INPUT_PARTIAL_SCHEMA_EVENTS_PATH_2 = "elastic/multiple-input-events-partial-2.json";
     private static final String INPUT_NO_EVENTS_PATH = "elastic/empty-input-events.json";
+    private static final String INPUT_SPECIAL_CHARACTER_COLUMN_NAMES_PATH = "elastic/single-input-event-special-character-column-names.json";
 
     private static final String INDEX_PATH = "elastic/test-index.json";
     private static final String MISSING_DATE_COL_INDEX_PATH = "elastic/test-missing-date-col-index.json";
     private static final String UNSUPPORTED_DATA_TYPE_INDEX_PATH = "elastic/test-unsupported-data-type-index.json";
     private static final String PARTIAL_SCHEMA_PATH_1 = "elastic/test-index-partial1.json";
     private static final String PARTIAL_SCHEMA_PATH_2 = "elastic/test-index-partial2.json";
-
-    private static final String USERNAME = "elastic";
-    private static final String PASSWORD = "password";
+    private static final String SPECIAL_CHARACTER_COLUMN_NAMES_INDEX_PATH = "elastic/test-special-character-column-names-index.json";
 
 
     @BeforeClass
     public static void beforeAll() throws Exception {
-        container.withEnv("xpack.security.enabled", "true");
-        container.withEnv("ELASTIC_PASSWORD", PASSWORD);
-        container.withEnv("ES_JAVA_OPTS", "-Xms1g -Xmx1g");
-        container.start();
-        Class.forName(container.getDriverClassName());
-        enableTrial();
+        ElasticCatalogTestBase.beforeAll();
         createTestIndex(INPUT_SINGLE_RECORD_TABLE, INDEX_PATH);
         createTestIndex(INPUT_MULTIPLE_RECORDS_TABLE, INDEX_PATH);
         createTestIndex(INPUT_MISSING_DATE_COL_TABLE, MISSING_DATE_COL_INDEX_PATH);
@@ -77,6 +59,7 @@ public class ElasticCatalogTest {
         createTestIndex(INPUT_PARTIAL_SCHEMA_TABLE_1, PARTIAL_SCHEMA_PATH_1);
         createTestIndex(INPUT_PARTIAL_SCHEMA_TABLE_2, PARTIAL_SCHEMA_PATH_2);
         createTestIndex(INPUT_EMPTY_TABLE, INDEX_PATH);
+        createTestIndex(INPUT_SPECIAL_CHARACTER_COLUMN_NAMES_TABLE, SPECIAL_CHARACTER_COLUMN_NAMES_INDEX_PATH);
         addTestData(INPUT_SINGLE_RECORD_TABLE, INPUT_SINGLE_EVENT_PATH);
         addTestData(INPUT_MULTIPLE_RECORDS_TABLE, INPUT_MULTIPLE_EVENTS_PATH);
         addTestData(INPUT_MISSING_DATE_COL_TABLE, INPUT_NO_DATE_COL_EVENTS_PATH);
@@ -84,57 +67,7 @@ public class ElasticCatalogTest {
         addTestData(INPUT_PARTIAL_SCHEMA_TABLE_1, INPUT_PARTIAL_SCHEMA_EVENTS_PATH_1);
         addTestData(INPUT_PARTIAL_SCHEMA_TABLE_2, INPUT_PARTIAL_SCHEMA_EVENTS_PATH_2);
         addTestData(INPUT_EMPTY_TABLE, INPUT_NO_EVENTS_PATH);
-    }
-
-    private static void enableTrial() throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder()
-                .url(String.format("http://%s:%d/_license/start_trial?acknowledge=true",
-                        container.getHost(), container.getElasticPort()))
-                .post(RequestBody.create(new byte[]{}))
-                .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
-                .build();
-        try (Response response = client.newCall(request).execute()) {
-            assertTrue(response.isSuccessful());
-        }
-    }
-
-    private static void createTestIndex(String inputTable, String indexPath) throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder()
-                .url(String.format("http://%s:%d/%s/", container.getHost(),
-                        container.getElasticPort(), inputTable))
-                .put(RequestBody.create(loadResource(indexPath)))
-                .addHeader("Content-Type", "application/json")
-            .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
-                .build();
-        try (Response response = client.newCall(request).execute()) {
-            assertTrue(response.isSuccessful());
-        }
-    }
-
-    private static void addTestData(String inputTable, String inputPath) throws Exception {
-        OkHttpClient client = new OkHttpClient();
-        Request request = new Request.Builder()
-                .url(String.format("http://%s:%d/%s/_bulk/", container.getHost(),
-                        container.getElasticPort(), inputTable))
-                .post(RequestBody.create(loadResource(inputPath)))
-                .addHeader("Content-Type", "application/json")
-            .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
-                .build();
-        client.newCall(request).execute();
-    }
-
-    private static byte[] loadResource(String path) throws IOException {
-        return IOUtils.toByteArray(
-                Objects.requireNonNull(ElasticCatalogTest.class.getClassLoader().getResourceAsStream(path))
-        );
-    }
-
-    private static String calculateExpectedTemporalUpperBound() {
-        // upper bound for temporal partition columns is the last milisecond of the current day
-        LocalDate tomorrowDate = LocalDate.now().plusDays(1);
-        return String.valueOf(tomorrowDate.atTime(LocalTime.MIDNIGHT).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli() - 1);
+        addTestData(INPUT_SPECIAL_CHARACTER_COLUMN_NAMES_TABLE, INPUT_SPECIAL_CHARACTER_COLUMN_NAMES_PATH);
     }
 
     @Test
@@ -171,8 +104,9 @@ public class ElasticCatalogTest {
         expectedTables.add("test_partial_schema_table_1");
         expectedTables.add("test_partial_schema_table_2");
         expectedTables.add("test_empty_table");
+        expectedTables.add("test_special_character_column_names_table");
 
-        assertEquals(7, tables.size());
+        assertEquals(8, tables.size());
         assertTrue(tables.containsAll(expectedTables));
     }
 
@@ -193,6 +127,7 @@ public class ElasticCatalogTest {
         assertTrue(catalog.tableExists(new ObjectPath("docker-cluster", "test_partial_schema_table_1")));
         assertTrue(catalog.tableExists(new ObjectPath("docker-cluster", "test_partial_schema_table_2")));
         assertTrue(catalog.tableExists(new ObjectPath("docker-cluster", "test_empty_table")));
+        assertTrue(catalog.tableExists(new ObjectPath("docker-cluster", "test_special_character_column_names_table")));
     }
 
     @Test
@@ -232,12 +167,12 @@ public class ElasticCatalogTest {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> scanProperties = new HashMap<String, String>();
-        scanProperties.put("properties.scan.test_multiple_records_table.partition.column.name", "date_col");
-        scanProperties.put("properties.scan.test_multiple_records_table.partition.number", "10");
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.scan.test_multiple_records_table.partition.column.name", "date_col");
+        properties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -255,12 +190,12 @@ public class ElasticCatalogTest {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> scanProperties = new HashMap<String, String>();
-        scanProperties.put("properties.scan.test_multiple_records_table.partition.column.name", "integer_col");
-        scanProperties.put("properties.scan.test_multiple_records_table.partition.number", "10");
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.scan.test_multiple_records_table.partition.column.name", "integer_col");
+        properties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -273,27 +208,28 @@ public class ElasticCatalogTest {
     }
 
     @Test
-    @Ignore // FIXME: the test fails frequently
     public void testGetTableDefaultScanOptionsZeroRecords() throws TableNotExistException {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> scanProperties = new HashMap<String, String>();
-        scanProperties.put("catalog.default.scan.partition.column.name", "date_col");
-        scanProperties.put("catalog.default.scan.partition.size", "100");
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("catalog.default.scan.partition.column.name", "date_col");
+        properties.put("catalog.default.scan.partition.size", "100");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_empty_table"));
 
         // then
+        String expectedLowerBound = calculateExpectedTemporalLowerBound();
+        String expectedUpperBound = calculateExpectedTemporalUpperBound();
         assertNotNull(table);
         assertNotNull(table.getUnresolvedSchema());
 
         assertEquals("date_col", table.getOptions().get("scan.partition.column"));
         assertEquals("1", table.getOptions().get("scan.partition.num"));
-        assertEquals("1674428400000", table.getOptions().get("scan.partition.lower-bound"));
-        assertEquals("1674514799999", table.getOptions().get("scan.partition.upper-bound"));
+        assertEquals(expectedLowerBound, table.getOptions().get("scan.partition.lower-bound"));
+        assertEquals(expectedUpperBound, table.getOptions().get("scan.partition.upper-bound"));
     }
 
     @Test
@@ -301,11 +237,11 @@ public class ElasticCatalogTest {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> scanProperties = new HashMap<String, String>();
-        scanProperties.put("properties.scan.test_multiple_records_table.partition.number", "10");
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -321,11 +257,11 @@ public class ElasticCatalogTest {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> scanProperties = new HashMap<String, String>();
-        scanProperties.put("properties.scan.test_multiple_records_table.partition.column.name", "date_col");
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.scan.test_multiple_records_table.partition.column.name", "date_col");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -341,12 +277,12 @@ public class ElasticCatalogTest {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> scanProperties = new HashMap<String, String>();
-        scanProperties.put("properties.scan.test_missing_date_col_table.partition.column.name", "date_col");
-        scanProperties.put("properties.scan.test_missing_date_col_table.partition.number", "10");
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.scan.test_missing_date_col_table.partition.column.name", "date_col");
+        properties.put("properties.scan.test_missing_date_col_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_missing_date_col_table"));
 
@@ -362,12 +298,12 @@ public class ElasticCatalogTest {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> scanProperties = new HashMap<String, String>();
-        scanProperties.put("properties.scan.test_single_record_table.partition.column.name", "keyword_col");
-        scanProperties.put("properties.scan.test_single_record_table.partition.number", "10");
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.scan.test_single_record_table.partition.column.name", "keyword_col");
+        properties.put("properties.scan.test_single_record_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_single_record_table"));
 
@@ -383,12 +319,12 @@ public class ElasticCatalogTest {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> scanProperties = new HashMap<String, String>();
-        scanProperties.put("properties.scan.test_multiple_records_table.partition.column.name", "date_col");
-        scanProperties.put("properties.scan.test_multiple_records_table.partition.number", "0");
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.scan.test_multiple_records_table.partition.column.name", "date_col");
+        properties.put("properties.scan.test_multiple_records_table.partition.number", "0");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -422,12 +358,12 @@ public class ElasticCatalogTest {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> scanProperties = new HashMap<String, String>();
-        scanProperties.put("catalog.default.scan.partition.column.name", "date_col");
-        scanProperties.put("catalog.default.scan.partition.size", "5");
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("catalog.default.scan.partition.column.name", "date_col");
+        properties.put("catalog.default.scan.partition.size", "5");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -445,14 +381,14 @@ public class ElasticCatalogTest {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> scanProperties = new HashMap<String, String>();
-        scanProperties.put("properties.scan.test_multiple_records_table.partition.column.name", "integer_col");
-        scanProperties.put("properties.scan.test_multiple_records_table.partition.number", "3");
-        scanProperties.put("catalog.default.scan.partition.column.name", "date_col");
-        scanProperties.put("catalog.default.scan.partition.size", "5");
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.scan.test_multiple_records_table.partition.column.name", "integer_col");
+        properties.put("properties.scan.test_multiple_records_table.partition.number", "3");
+        properties.put("catalog.default.scan.partition.column.name", "date_col");
+        properties.put("catalog.default.scan.partition.size", "5");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, scanProperties);
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -504,7 +440,7 @@ public class ElasticCatalogTest {
                         DataTypes.DOUBLE(),
                         DataTypes.SMALLINT(),
                 }).build();
-        assertEquals(8, tables.size());
+        assertEquals(9, tables.size());
         assertNotNull(table);
         assertFalse(table.getOptions().containsKey("scan.partition.column"));
         assertFalse(table.getOptions().containsKey("scan.partition.num"));
@@ -534,7 +470,7 @@ public class ElasticCatalogTest {
         String expectedUpperBound = calculateExpectedTemporalUpperBound();
         List<String> tables = catalog.listTables("docker-cluster");
 
-        assertEquals(9, tables.size());
+        assertEquals(10, tables.size());
 
         assertNotNull(table);
         assertNotNull(table.getUnresolvedSchema());
@@ -566,7 +502,7 @@ public class ElasticCatalogTest {
         // then
         List<String> tables = catalog.listTables("docker-cluster");
         assertTrue(catalog.tableExists(new ObjectPath("docker-cluster", "test_partial_schema_table_*")));
-        assertEquals(8, tables.size());
+        assertEquals(9, tables.size());
     }
 
     @Test
@@ -597,7 +533,7 @@ public class ElasticCatalogTest {
         String expectedUpperBound = calculateExpectedTemporalUpperBound();
         Schema schema = table.getUnresolvedSchema();
         List<String> tables = catalog.listTables("docker-cluster");
-        assertEquals(8, tables.size());
+        assertEquals(9, tables.size());
         assertNotNull(table);
         assertNotNull(table.getUnresolvedSchema());
         assertEquals("date_col", table.getOptions().get("scan.partition.column"));
@@ -605,5 +541,28 @@ public class ElasticCatalogTest {
         assertEquals("1420607710000", table.getOptions().get("scan.partition.lower-bound"));
         assertEquals(expectedUpperBound, table.getOptions().get("scan.partition.upper-bound"));
         assertEquals(expectedSchema, schema);
+    }
+
+    @Test
+    public void testGetTablePartitionBySpecialCharacterColumn() throws TableNotExistException, DatabaseNotExistException {
+        // given
+        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
+                container.getElasticPort());
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.scan.test_special_character_column_names_table.partition.column.name", "@timestamp");
+        properties.put("properties.scan.test_special_character_column_names_table.partition.number", "10");
+
+        // when
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
+        CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_special_character_column_names_table"));
+
+        // then
+        String expectedUpperBound = calculateExpectedTemporalUpperBound();
+        assertNotNull(table);
+        assertNotNull(table.getUnresolvedSchema());
+        assertEquals("@timestamp", table.getOptions().get("scan.partition.column"));
+        assertEquals("10", table.getOptions().get("scan.partition.num"));
+        assertEquals("1420114230000", table.getOptions().get("scan.partition.lower-bound"));
+        assertEquals(expectedUpperBound, table.getOptions().get("scan.partition.upper-bound"));
     }
 }
