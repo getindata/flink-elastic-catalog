@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 -   Support partitioning for special character columns & Fix error in unit test.
+-   Add LIKE operator pushdown.
 
 ## [0.0.2] - 2023-02-19
 
