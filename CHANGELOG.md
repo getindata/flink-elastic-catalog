@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.0.3] - 2023-02-24
+
 -   Support partitioning for special character columns & Fix error in unit test.
 -   Add LIKE operator pushdown.
 -   Preserve columns order returned by Elastic driver.
@@ -14,7 +16,9 @@
 
 -   Initial implementation of Flink Catalog for Elastic
 
-[Unreleased]: https://github.com/getindata/flink-elastic-catalog/compare/0.0.2...HEAD
+[Unreleased]: https://github.com/getindata/flink-elastic-catalog/compare/0.0.3...HEAD
+
+[0.0.3]: https://github.com/getindata/flink-elastic-catalog/compare/0.0.2...0.0.3
 
 [0.0.2]: https://github.com/getindata/flink-elastic-catalog/compare/0.0.1...0.0.2
 
