@@ -1,5 +1,19 @@
 package com.getindata.flink.connector.jdbc.catalog;
 
+import com.getindata.flink.connector.jdbc.table.JdbcDynamicTableFactory;
+import org.apache.commons.compress.utils.Lists;
+import org.apache.flink.table.api.DataTypes;
+import org.apache.flink.table.api.Schema;
+import org.apache.flink.table.catalog.CatalogBaseTable;
+import org.apache.flink.table.catalog.CatalogTable;
+import org.apache.flink.table.catalog.ObjectPath;
+import org.apache.flink.table.catalog.UniqueConstraint;
+import org.apache.flink.table.catalog.exceptions.CatalogException;
+import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
+import org.apache.flink.table.catalog.exceptions.TableNotExistException;
+import org.apache.flink.table.types.DataType;
+import org.elasticsearch.xpack.sql.jdbc.EsDriver;
+
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -18,19 +32,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import org.apache.commons.compress.utils.Lists;
-import org.apache.flink.table.api.DataTypes;
-import org.apache.flink.table.api.Schema;
-import org.apache.flink.table.catalog.CatalogBaseTable;
-import org.apache.flink.table.catalog.CatalogTable;
-import org.apache.flink.table.catalog.ObjectPath;
-import org.apache.flink.table.catalog.UniqueConstraint;
-import org.apache.flink.table.catalog.exceptions.CatalogException;
-import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
-import org.apache.flink.table.catalog.exceptions.TableNotExistException;
-import org.apache.flink.table.types.DataType;
-import org.elasticsearch.xpack.sql.jdbc.EsDriver;
-import com.getindata.flink.connector.jdbc.table.JdbcDynamicTableFactory;
 import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_COLUMN;
 import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_LOWER_BOUND;
 import static com.getindata.flink.connector.jdbc.table.JdbcConnectorOptions.SCAN_PARTITION_NUM;
@@ -56,22 +57,14 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     private final String catalogDefaultScanPartitionColumnName;
     private final String catalogDefaultScanPartitionCapacity;
     private final Map<String, ScanPartitionProperties> scanPartitionProperties;
+    private final Map<String, TimeAttributeProperties> timeAttributeProperties;
     private final List<String> indexPatterns;
 
-    public ElasticCatalog(String catalogName,
-                          String defaultDatabase,
-                          String username,
-                          String password,
-                          String baseUrl) {
+    public ElasticCatalog(String catalogName, String defaultDatabase, String username, String password, String baseUrl) {
         this(catalogName, defaultDatabase, username, password, baseUrl, new HashMap<>());
     }
 
-    public ElasticCatalog(String catalogName,
-                          String defaultDatabase,
-                          String username,
-                          String password,
-                          String baseUrl,
-                          Map<String, String> properties) {
+    public ElasticCatalog(String catalogName, String defaultDatabase, String username, String password, String baseUrl, Map<String, String> properties) {
         super(catalogName, defaultDatabase, username, password, baseUrl, baseUrl);
         this.dialectTypeMapper = new ElasticTypeMapper();
         String[] catalogDefaultScanProperties = extractCatalogDefaultScanProperties(properties);
@@ -79,6 +72,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         this.catalogDefaultScanPartitionColumnName = catalogDefaultScanProperties[0];
         this.catalogDefaultScanPartitionCapacity = catalogDefaultScanProperties[1];
         this.scanPartitionProperties = extractScanTablePartitionProperties(properties);
+        this.timeAttributeProperties = extractTimeAttributeProperties(properties);
     }
 
     private String[] extractCatalogDefaultScanProperties(Map<String, String> properties) {
@@ -97,35 +91,25 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     private List<String> extractIndexPatterns(Map<String, String> properties) {
         // Splitting patterns and removing duplicates
 
-        return Arrays.stream(
-                        properties.getOrDefault("properties.index.patterns", "").split(",")
-                )
-                .map(String::trim)
-                .filter(e -> !e.isEmpty())
-                .distinct()
-                .collect(Collectors.toList());
+        return Arrays.stream(properties.getOrDefault("properties.index.patterns", "").split(",")).map(String::trim).filter(e -> !e.isEmpty()).distinct().collect(Collectors.toList());
     }
 
     private Map<String, ScanPartitionProperties> extractScanTablePartitionProperties(Map<String, String> properties) {
         Map<String, ScanPartitionProperties> scanPartitionProperties = new HashMap<>();
         for (Map.Entry<String, String> entry : properties.entrySet()) {
             String key = entry.getKey();
-            if (!key.startsWith("properties.scan") || !(key.endsWith("partition.column.name") || key.endsWith("partition.number"))) {
+            if (!key.startsWith("properties.scan.") || !(key.endsWith(".partition.column.name") || key.endsWith(".partition.number"))) {
                 continue;
             }
-            String tableName = key.replace("properties.scan.", "")
-                    .replace(".partition.column.name", "")
-                    .replace(".partition.number", "");
+            String tableName = key.replace("properties.scan.", "").replace(".partition.column.name", "").replace(".partition.number", "");
             boolean scanPropertiesForTableFound = scanPartitionProperties.containsKey(tableName);
-            ScanPartitionProperties partitionProperties = scanPropertiesForTableFound
-                    ? scanPartitionProperties.get(tableName)
-                    : new ScanPartitionProperties();
+            ScanPartitionProperties partitionProperties = scanPropertiesForTableFound ? scanPartitionProperties.get(tableName) : new ScanPartitionProperties();
 
-            if (entry.getKey().endsWith("partition.column.name")) {
+            if (entry.getKey().endsWith(".partition.column.name")) {
                 if (partitionProperties.partitionColumnName == null) {
                     partitionProperties.setPartitionColumnName(entry.getValue());
                 }
-            } else if (entry.getKey().endsWith("partition.number")) {
+            } else if (entry.getKey().endsWith(".partition.number")) {
                 if (partitionProperties.partitionNumber == null) {
                     partitionProperties.setPartitionNumber(Integer.parseInt(entry.getValue()));
                 }
@@ -139,12 +123,47 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         return scanPartitionProperties;
     }
 
+    private Map<String, TimeAttributeProperties> extractTimeAttributeProperties(Map<String, String> properties) {
+        Map<String, TimeAttributeProperties> timeAttributeProperties = new HashMap<>();
+
+        for (Map.Entry<String, String> entry : properties.entrySet()) {
+            String key = entry.getKey();
+            if (!key.startsWith("properties.timeattribute.") || !(key.endsWith(".watermark.column") || key.endsWith(".watermark.delay") || key.endsWith(".proctime.column"))) {
+                continue;
+            }
+            String tableName = key.replace("properties.timeattribute.", "").
+                    replace(".watermark.column", "").
+                    replace(".watermark.delay", "").
+                    replace(".proctime.column", "");
+            boolean timeAttributePropertiesForTableFound = timeAttributeProperties.containsKey(tableName);
+            TimeAttributeProperties timeAttributePropertiesForTable = timeAttributePropertiesForTableFound ? timeAttributeProperties.get(tableName) : new TimeAttributeProperties();
+
+            if (entry.getKey().endsWith(".watermark.column")) {
+                if (timeAttributePropertiesForTable.getWatermarkColumn() == null) {
+                    timeAttributePropertiesForTable.setWatermarkColumn(entry.getValue());
+                }
+            } else if (entry.getKey().endsWith(".watermark.delay")) {
+                if (timeAttributePropertiesForTable.getWatermarkDelay() == null) {
+                    timeAttributePropertiesForTable.setWatermarkDelay(entry.getValue());
+                }
+            } else if (entry.getKey().endsWith(".proctime.column")) {
+                if (timeAttributePropertiesForTable.getProctimeColumn() == null) {
+                    timeAttributePropertiesForTable.setProctimeColumn(entry.getValue());
+                }
+            }
+            // Adding a new watermarkProperties to the map
+            if (!timeAttributePropertiesForTableFound) {
+                timeAttributeProperties.put(tableName, timeAttributePropertiesForTable);
+            }
+        }
+        return timeAttributeProperties;
+    }
+
     @Override
     public List<String> listDatabases() throws CatalogException {
         List<String> databases = new ArrayList<>();
         try (Connection connection = DriverManager.getConnection(baseUrl, username, pwd)) {
-            try (Statement statement = connection.createStatement();
-                 ResultSet results = statement.executeQuery("SHOW CATALOGS")) {
+            try (Statement statement = connection.createStatement(); ResultSet results = statement.executeQuery("SHOW CATALOGS")) {
                 while (results.next()) {
                     databases.add(results.getString(1));
                 }
@@ -159,8 +178,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     public List<String> listTables(String databaseName) throws DatabaseNotExistException, CatalogException {
         List<String> tables = new ArrayList<>();
         try (Connection connection = DriverManager.getConnection(baseUrl, username, pwd)) {
-            try (Statement statement = connection.createStatement();
-                 ResultSet results = statement.executeQuery("SHOW TABLES CATALOG '" + databaseName + "'")) {
+            try (Statement statement = connection.createStatement(); ResultSet results = statement.executeQuery("SHOW TABLES CATALOG '" + databaseName + "'")) {
                 while (results.next()) {
                     tables.add(results.getString(2));
                 }
@@ -176,8 +194,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     @Override
     public boolean tableExists(ObjectPath tablePath) throws CatalogException {
         try {
-            return databaseExists(tablePath.getDatabaseName())
-                    && listTables(tablePath.getDatabaseName()).contains(tablePath.getObjectName());
+            return databaseExists(tablePath.getDatabaseName()) && listTables(tablePath.getDatabaseName()).contains(tablePath.getObjectName());
         } catch (DatabaseNotExistException e) {
             return false;
         }
@@ -191,8 +208,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
 
         try (Connection conn = DriverManager.getConnection(baseUrl, username, pwd)) {
             DatabaseMetaData metaData = conn.getMetaData();
-            Optional<UniqueConstraint> primaryKey =
-                    getPrimaryKey(metaData, null, getSchemaName(tablePath), getTableName(tablePath));
+            Optional<UniqueConstraint> primaryKey = getPrimaryKey(metaData, null, getSchemaName(tablePath), getTableName(tablePath));
 
             ResultSetMetaData resultSetMetaData = retrieveResultSetMetaData(conn, tablePath);
 
@@ -200,8 +216,11 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
             String[] columnNames = columns.keySet().toArray(new String[0]);
             DataType[] types = columns.values().toArray(new DataType[0]);
 
-            Schema tableSchema = buildSchema(columnNames, types, primaryKey);
             String tableName = getSchemaTableName(tablePath);
+            TimeAttributeProperties tableTimeAttributeProperties = timeAttributeProperties.get(tableName);
+            checkTimeAttributeProperties(tableTimeAttributeProperties, tableName);
+            Schema tableSchema = buildSchema(columnNames, types, primaryKey, tableTimeAttributeProperties);
+
             ScanPartitionProperties properties = scanPartitionProperties.get(tableName);
 
             if (shouldTableBePartitioned(properties)) {
@@ -226,9 +245,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     }
 
     private boolean shouldTableBePartitioned(ScanPartitionProperties properties) {
-        return properties != null ||
-                this.catalogDefaultScanPartitionColumnName != null ||
-                this.catalogDefaultScanPartitionCapacity != null;
+        return properties != null || this.catalogDefaultScanPartitionColumnName != null || this.catalogDefaultScanPartitionCapacity != null;
     }
 
     private void deducePartitionColumnName(ScanPartitionProperties properties, String tableName) {
@@ -253,7 +270,26 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
 
     private void checkScanPartitionNumber(int partitionNumber) {
         if (partitionNumber <= 0) {
-            throw new CatalogException("Partition number has to be greater than 0!");
+            throw new IllegalArgumentException("Partition number has to be greater than 0!");
+        }
+    }
+
+    private void checkTimeAttributeProperties(TimeAttributeProperties timeAttributeProperties, String tableName) {
+        if (timeAttributeProperties == null) {
+            return;
+        }
+
+        String proctimeColumn = timeAttributeProperties.getProctimeColumn();
+        String watermarkDelay = timeAttributeProperties.getWatermarkDelay();
+        String watermarkColumn = timeAttributeProperties.getWatermarkColumn();
+
+        if (proctimeColumn != null && (
+                watermarkDelay != null ||
+                        watermarkColumn != null)) {
+            throw new IllegalArgumentException("Either proctime or watermark properties should be specified for a table " + tableName + ".");
+        }
+        if (proctimeColumn == null && (watermarkDelay == null || watermarkColumn == null)) {
+            throw new IllegalArgumentException("You should specify both watermarkDelay and watermakColumn properties when using watermark for a table " + tableName + ".");
         }
     }
 
@@ -263,18 +299,16 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
                 return types[columnIndex];
             }
         }
-        throw new CatalogException(format("Partition column was not found in the specified table %s!", tableName));
+        throw new IllegalArgumentException(format("Partition column was not found in the specified table %s!", tableName));
     }
 
     private void checkScanPartitionColumnType(DataType type) {
         if (!(isColumnNumeric(type) || isColumnTemporal(type))) {
-            throw new CatalogException(
-                    format("Partition column is of type %s. We support only NUMERIC, DATE and TIMESTAMP partition columns.", type));
+            throw new CatalogException(format("Partition column is of type %s. We support only NUMERIC, DATE and TIMESTAMP partition columns.", type));
         }
     }
 
-    private Map<String, DataType> retrieveColumns(ResultSetMetaData resultSetMetaData,
-                                                  ObjectPath tablePath) throws SQLException {
+    private Map<String, DataType> retrieveColumns(ResultSetMetaData resultSetMetaData, ObjectPath tablePath) throws SQLException {
         // Elastic driver returns columns in alphabetical order. LinkedHashMap preserves the order.
         Map<String, DataType> columns = new LinkedHashMap<>();
 
@@ -297,25 +331,27 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Schema buildSchema(String[] columnNames, DataType[] types, Optional<UniqueConstraint> primaryKey) {
+    private Schema buildSchema(String[] columnNames, DataType[] types, Optional<UniqueConstraint> primaryKey, TimeAttributeProperties timeAttributeProperties) {
         Schema.Builder schemaBuilder = Schema.newBuilder().fromFields(columnNames, types);
-        primaryKey.ifPresent(
-                pk -> schemaBuilder.primaryKeyNamed(pk.getName(), pk.getColumns()));
+        primaryKey.ifPresent(pk -> schemaBuilder.primaryKeyNamed(pk.getName(), pk.getColumns()));
+
+        if (timeAttributeProperties != null) {
+            // using proctime
+            if (timeAttributeProperties.getProctimeColumn() != null) {
+                schemaBuilder.columnByExpression(timeAttributeProperties.getProctimeColumn(), "PROCTIME()");
+            } else { // using watermarking
+                schemaBuilder.watermark(timeAttributeProperties.getWatermarkColumn(), timeAttributeProperties.getWatermarkColumn() + " - INTERVAL " + timeAttributeProperties.getWatermarkDelay());
+            }
+        }
         return schemaBuilder.build();
     }
 
     private boolean isColumnNumeric(DataType type) {
-        return type.equals(DataTypes.TINYINT()) ||
-                type.equals(DataTypes.SMALLINT()) ||
-                type.equals(DataTypes.INT()) ||
-                type.equals(DataTypes.BIGINT()) ||
-                type.equals(DataTypes.FLOAT()) ||
-                type.equals(DataTypes.DOUBLE());
+        return type.equals(DataTypes.TINYINT()) || type.equals(DataTypes.SMALLINT()) || type.equals(DataTypes.INT()) || type.equals(DataTypes.BIGINT()) || type.equals(DataTypes.FLOAT()) || type.equals(DataTypes.DOUBLE());
     }
 
     private boolean isColumnTemporal(DataType type) {
-        return type.equals(DataTypes.TIMESTAMP()) ||
-                type.equals(DataTypes.DATE());
+        return type.equals(DataTypes.TIMESTAMP()) || type.equals(DataTypes.DATE());
     }
 
     private int calculatePartitionNumberBasedOnPartitionSize(Connection conn, String tableName) {
@@ -453,10 +489,49 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         }
 
         public String toString() {
-            return "partitionColumnName=" + partitionColumnName +
-                    ", partitionNumber=" + partitionNumber +
-                    ", scanPartitionLowerBound=" + scanPartitionLowerBound +
-                    ", scanPartitionUpperBound=" + scanPartitionUpperBound;
+            return "partitionColumnName=" + partitionColumnName + ", partitionNumber=" + partitionNumber + ", scanPartitionLowerBound=" + scanPartitionLowerBound + ", scanPartitionUpperBound=" + scanPartitionUpperBound;
+        }
+    }
+
+    static class TimeAttributeProperties {
+        private String watermarkColumn;
+        private String watermarkDelay;
+        private String proctimeColumn;
+
+        public TimeAttributeProperties() {
+            this.watermarkColumn = null;
+            this.watermarkDelay = null;
+            this.proctimeColumn = null;
+        }
+
+        public String getWatermarkColumn() {
+            return this.watermarkColumn;
+        }
+
+        public String getWatermarkDelay() {
+            return this.watermarkDelay;
+        }
+
+        public String getProctimeColumn() {
+            return this.proctimeColumn;
+        }
+
+        public void setWatermarkColumn(String watermarkColumn) {
+            this.watermarkColumn = watermarkColumn;
+        }
+
+        public void setWatermarkDelay(String watermarkDelay) {
+            this.watermarkDelay = watermarkDelay;
+        }
+
+        public void setProctimeColumn(String proctimeColumn) {
+            this.proctimeColumn = proctimeColumn;
+        }
+
+        public String toString() {
+            return "watermarkColumn=" + watermarkColumn +
+                    ", watermarkDelay=" + watermarkDelay +
+                    ", proctimeColumn=" + proctimeColumn;
         }
     }
 }

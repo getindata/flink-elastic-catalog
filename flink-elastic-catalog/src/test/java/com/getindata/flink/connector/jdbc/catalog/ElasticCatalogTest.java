@@ -418,12 +418,12 @@ public class ElasticCatalogTest extends ElasticCatalogTestBase {
 
         Schema expectedSchema = Schema.newBuilder().fromFields(
                 new String[]{"binary_col", "boolean_col", "byte_col",
-                    "constant_keyword_col", "date_col", "date_epoch_col",
-                    "date_nanos_col", "double_col", "float_col",
-                    "half_float_col", "integer_col", "ip_col",
-                    "keyword_col", "long_col", "scaled_float_col",
-                    "short_col", "text_col", "text_multifield_col",
-                    "unsigned_long_col", "version_col", "wildcard_col"},
+                        "constant_keyword_col", "date_col", "date_epoch_col",
+                        "date_nanos_col", "double_col", "float_col",
+                        "half_float_col", "integer_col", "ip_col",
+                        "keyword_col", "long_col", "scaled_float_col",
+                        "short_col", "text_col", "text_multifield_col",
+                        "unsigned_long_col", "version_col", "wildcard_col"},
                 new AbstractDataType[]{
                         DataTypes.STRING(),
                         DataTypes.BOOLEAN(),
@@ -527,15 +527,15 @@ public class ElasticCatalogTest extends ElasticCatalogTestBase {
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_partial_schema_table_*"));
 
         Schema expectedSchema = Schema.newBuilder().fromFields(
-            new String[]{"date_col", "double_col", "integer_col", "ip_col", "keyword_col", "short_col", "version_col"},
-            new AbstractDataType[]{
-                DataTypes.TIMESTAMP(6),
-                DataTypes.DOUBLE(),
-                DataTypes.INT(),
-                DataTypes.STRING(),
-                DataTypes.STRING(),
-                DataTypes.SMALLINT(),
-                DataTypes.STRING()}).build();
+                new String[]{"date_col", "double_col", "integer_col", "ip_col", "keyword_col", "short_col", "version_col"},
+                new AbstractDataType[]{
+                        DataTypes.TIMESTAMP(6),
+                        DataTypes.DOUBLE(),
+                        DataTypes.INT(),
+                        DataTypes.STRING(),
+                        DataTypes.STRING(),
+                        DataTypes.SMALLINT(),
+                        DataTypes.STRING()}).build();
         // then
         String expectedUpperBound = calculateExpectedTemporalUpperBound();
         Schema schema = table.getUnresolvedSchema();
@@ -551,7 +551,7 @@ public class ElasticCatalogTest extends ElasticCatalogTestBase {
     }
 
     @Test
-    public void testGetTablePartitionBySpecialCharacterColumn() throws TableNotExistException, DatabaseNotExistException {
+    public void testGetTablePartitionBySpecialCharacterColumn() throws TableNotExistException {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
@@ -577,21 +577,137 @@ public class ElasticCatalogTest extends ElasticCatalogTestBase {
     public void testPreservesColumnsOrder() throws TableNotExistException {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-            container.getElasticPort());
+                container.getElasticPort());
 
         // when
         ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url);
 
         // then
         String[] actualColumnNames = catalog.getTable(new ObjectPath("docker-cluster", "test_single_record_table"))
-            .getUnresolvedSchema()
-            .getColumns()
-            .stream()
-            .map(Schema.UnresolvedColumn::getName)
-            .toArray(String[]::new);
+                .getUnresolvedSchema()
+                .getColumns()
+                .stream()
+                .map(Schema.UnresolvedColumn::getName)
+                .toArray(String[]::new);
+
         for (int i = 0; i < actualColumnNames.length - 1; ++i) {
             // Elastic driver returns columns in alphabetical order.
             assertTrue(actualColumnNames[i].compareTo(actualColumnNames[i + 1]) < 0);
+        }
+    }
+
+    @Test
+    public void testGetTableTimeAttributesProctime() throws TableNotExistException {
+        // given
+        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
+                container.getElasticPort());
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.timeattribute.test_multiple_records_table.proctime.column", "my_proctime");
+
+        // when
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
+        CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
+
+        // then
+        Schema schema = table.getUnresolvedSchema();
+        assertNotNull(table);
+        assertNotNull(schema);
+
+        Schema expectedSchema = Schema.newBuilder().fromFields(
+                new String[]{"binary_col", "boolean_col", "byte_col",
+                        "constant_keyword_col", "date_col", "date_epoch_col",
+                        "date_nanos_col", "double_col", "float_col",
+                        "half_float_col", "integer_col", "ip_col",
+                        "keyword_col", "long_col", "scaled_float_col",
+                        "short_col", "text_col", "text_multifield_col",
+                        "unsigned_long_col", "version_col", "wildcard_col"},
+                new AbstractDataType[]{
+                        DataTypes.STRING(),
+                        DataTypes.BOOLEAN(),
+                        DataTypes.TINYINT(),
+                        DataTypes.STRING(),
+                        DataTypes.TIMESTAMP(6),
+                        DataTypes.TIMESTAMP(6),
+                        DataTypes.TIMESTAMP(6),
+                        DataTypes.DOUBLE(),
+                        DataTypes.FLOAT(),
+                        DataTypes.FLOAT(),
+                        DataTypes.INT(),
+                        DataTypes.STRING(),
+                        DataTypes.STRING(),
+                        DataTypes.BIGINT(),
+                        DataTypes.DOUBLE(),
+                        DataTypes.SMALLINT(),
+                        DataTypes.STRING(),
+                        DataTypes.STRING(),
+                        DataTypes.BIGINT(),
+                        DataTypes.STRING(),
+                        DataTypes.STRING()
+                }).columnByExpression("my_proctime", "PROCTIME()")
+                .build();
+
+        assertEquals(expectedSchema, schema);
+    }
+
+    @Test
+    public void testGetTableTimeAttributesWatermark() throws TableNotExistException {
+        // given
+        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
+                container.getElasticPort());
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.timeattribute.test_multiple_records_table.watermark.column", "date_col");
+        properties.put("properties.timeattribute.test_multiple_records_table.watermark.delay", "'5' SECOND");
+
+        // when
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
+        CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
+
+        // then
+        Schema schema = table.getUnresolvedSchema();
+
+        assertEquals(1, schema.getWatermarkSpecs().size());
+        assertEquals("[date_col - INTERVAL '5' SECOND]", schema.getWatermarkSpecs().get(0).getWatermarkExpression().toString());
+    }
+
+    @Test
+    public void testFailGetTableTimeAttributesProctimeAndWatermarkProvided() throws TableNotExistException {
+        // given
+        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
+                container.getElasticPort());
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.timeattribute.test_multiple_records_table.proctime.column", "my_proctime");
+        properties.put("properties.timeattribute.test_multiple_records_table.watermark.column", "date_col");
+        properties.put("properties.timeattribute.test_multiple_records_table.watermark.delay", "'5' SECOND");
+
+        // when
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
+        try {
+            catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
+
+            // then
+            fail("Should have thrown CatalogException");
+        } catch (CatalogException e) {
+            assertTrue(e.getCause().getMessage().contains("Either proctime or watermark properties should be specified for a table test_multiple_records_table."));
+        }
+    }
+
+    @Test
+    public void testFailGetTableWithWatermarkMissingProperty() throws TableNotExistException {
+        // given
+        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
+                container.getElasticPort());
+        Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.timeattribute.test_multiple_records_table.watermark.column", "date_col");
+
+        // when
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME, PASSWORD, url, properties);
+        try {
+            catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
+
+            // then
+            fail("Should have thrown CatalogException");
+        } catch (CatalogException e) {
+            assertTrue(e.getCause().getMessage().contains("You should specify both watermarkDelay and watermakColumn properties when using watermark for a table test_multiple_records_table."));
         }
     }
 }
