@@ -84,10 +84,15 @@ public class ElasticJdbcCatalogFactory implements CatalogFactory {
         for (Map.Entry<String, String> entry : scanOptions.entrySet()) {
             String key = entry.getKey();
             if (!(key.startsWith("properties.scan.") && key.endsWith("partition.column.name")) &&
-                !(key.startsWith("properties.scan.") && key.endsWith("partition.number"))) {
+                !(key.startsWith("properties.scan.") && key.endsWith("partition.number")) &&
+                !(key.startsWith("properties.watermark.") && key.endsWith("interval")) &&
+                !(key.startsWith("properties.watermark.") && key.endsWith("unit"))) {
                 throw new IllegalArgumentException("Parameter " + entry.getKey() + " is not supported. We support" +
                     " properties.scan.<table_name>.partition.column.name, " +
-                    " properties.scan.<table_name>.partition.number " +
+                    " properties.scan.<table_name>.partition.number, " +
+                    " properties.timeattribute.<table_name>.watermark.column, " +
+                    " properties.timeattribute.<table_name>.watermark.delay, " +
+                    " properties.timeattribute.<table_name>.proctime.column " +
                     "dynamic properties only."
                 );
             }
