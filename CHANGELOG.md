@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+-   Add support for time attributes
 -   Support partitioning for special character columns & Fix error in unit test.
 -   Add LIKE operator pushdown.
 -   Preserve columns order returned by Elastic driver.
