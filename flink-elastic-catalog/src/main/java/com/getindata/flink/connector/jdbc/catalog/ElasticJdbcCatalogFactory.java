@@ -66,7 +66,7 @@ public class ElasticJdbcCatalogFactory implements CatalogFactory {
     public Catalog createCatalog(Context context) {
         final FactoryUtil.CatalogFactoryHelper helper =
             FactoryUtil.createCatalogFactoryHelper(this, context);
-        helper.validateExcept("properties.scan");
+        helper.validateExcept("properties.scan", "properties.timeattribute");
         validateDynamicOptions(context.getOptions());
 
         return new ElasticCatalog(
@@ -80,13 +80,14 @@ public class ElasticJdbcCatalogFactory implements CatalogFactory {
     }
 
     private void validateDynamicOptions(Map<String, String> options) {
-        Map<String, String> scanOptions = extractScanOptions(options);
-        for (Map.Entry<String, String> entry : scanOptions.entrySet()) {
+        Map<String, String> dynamicOptions = extractDynamicOptions(options);
+        for (Map.Entry<String, String> entry : dynamicOptions.entrySet()) {
             String key = entry.getKey();
             if (!(key.startsWith("properties.scan.") && key.endsWith("partition.column.name")) &&
                 !(key.startsWith("properties.scan.") && key.endsWith("partition.number")) &&
-                !(key.startsWith("properties.watermark.") && key.endsWith("interval")) &&
-                !(key.startsWith("properties.watermark.") && key.endsWith("unit"))) {
+                !(key.startsWith("properties.timeattribute.") && key.endsWith("watermark.column")) &&
+                !(key.startsWith("properties.timeattribute.") && key.endsWith("watermark.delay")) &&
+                !(key.startsWith("properties.timeattribute.") && key.endsWith("proctime.column"))) {
                 throw new IllegalArgumentException("Parameter " + entry.getKey() + " is not supported. We support" +
                     " properties.scan.<table_name>.partition.column.name, " +
                     " properties.scan.<table_name>.partition.number, " +
@@ -99,9 +100,10 @@ public class ElasticJdbcCatalogFactory implements CatalogFactory {
         }
     }
 
-    private Map<String, String> extractScanOptions(Map<String, String> options) {
+    private Map<String, String> extractDynamicOptions(Map<String, String> options) {
         return options.entrySet().stream()
-            .filter(entry -> entry.getKey().startsWith("properties.scan"))
+            .filter(entry -> entry.getKey().startsWith("properties.scan") ||
+                    entry.getKey().startsWith("properties.timeattribute"))
             .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 }

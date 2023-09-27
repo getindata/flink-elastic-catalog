@@ -39,7 +39,13 @@ public class ElasticTypeMapper implements JdbcDialectTypeMapper {
             case ELASTIC_BYTE:
                 return DataTypes.TINYINT();
             case ELASTIC_DATETIME:
-                return DataTypes.TIMESTAMP();
+                int p = metadata.getPrecision(colIndex);
+                if (p > 0) {
+                    return DataTypes.TIMESTAMP(p);
+                }
+                else {
+                    return DataTypes.TIMESTAMP();
+                }
             case ELASTIC_DOUBLE:
             case ELASTIC_SCALED_FLOAT:
                 return DataTypes.DOUBLE();

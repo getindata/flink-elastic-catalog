@@ -18,9 +18,10 @@
       "wildcard_col": { "type": "wildcard" },
       "binary_col":  { "type": "text" },
       "date_col": { "type": "date" },
+      "date_millis_col": { "type": "date", "format": "date_time" },
       "ip_col": { "type": "ip" },
       "version_col": { "type": "version" },
-      "text_col": { "type": "text" },
+      "text_col": { "type": "text", "fields": { "raw": { "type": "keyword" } } },
       "boolean_col": {"type": "boolean"},
       "text_multifield_col": {"type": "text", "fields": {"raw": {"type":  "keyword"}}}
     }

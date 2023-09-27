@@ -111,6 +111,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
                         + "wildcard_col VARCHAR,"
                         + "binary_col VARCHAR," // binary type has to be declared as varchar
                         + "date_col TIMESTAMP,"
+                        + "date_millis_col TIMESTAMP(3),"
                         + "ip_col VARCHAR,"
                         + "version_col VARCHAR,"
                         + "text_col VARCHAR,"
@@ -146,6 +147,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
                         + "wildcard_col VARCHAR,"
                         + "binary_col VARCHAR," // binary type has to be declared as varchar
                         + "date_col TIMESTAMP,"
+                        + "date_millis_col TIMESTAMP(3),"
                         + "ip_col VARCHAR,"
                         + "version_col VARCHAR,"
                         + "text_col VARCHAR,"
@@ -174,10 +176,20 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
     }
 
     private static Row convertTimeToLocalTime(Row element) {
-        LocalDateTime ldt = (LocalDateTime) element.getField("date_col");
-        ZonedDateTime ldtZoned = ldt.atZone(ZoneId.systemDefault());
-        ZonedDateTime utcZoned = ldtZoned.withZoneSameInstant(ZoneId.of("UTC"));
-        element.setField("date_col", utcZoned.toLocalDateTime());
+        if (element.getField("date_millis_col") != null) {
+            LocalDateTime ldt = (LocalDateTime) element.getField("date_millis_col");
+            ZonedDateTime ldtZoned = ldt.atZone(ZoneId.systemDefault());
+            ZonedDateTime utcZoned = ldtZoned.withZoneSameInstant(ZoneId.of("UTC"));
+            element.setField("date_millis_col", utcZoned.toLocalDateTime());
+        }
+
+        if (element.getField("date_col") != null) {
+            LocalDateTime ldt2 = (LocalDateTime) element.getField("date_col");
+            ZonedDateTime ldtZoned2 = ldt2.atZone(ZoneId.systemDefault());
+            ZonedDateTime utcZoned2 = ldtZoned2.withZoneSameInstant(ZoneId.of("UTC"));
+            element.setField("date_col", utcZoned2.toLocalDateTime());
+        }
+
         return element;
     }
 
@@ -199,7 +211,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
 
         Iterator<Row> collected = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_1).collect();
         List<String> result = collectResults(collected);
-        List<String> expected = Collections.singletonList("+I[1.1234, 2.123456787, 123, 12345, 1, 123123123, 123123123, 12.123, flink test, flink, flink_*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-01T12:10:30, 192.168.1.1, 1.2.3, aaa bbb ccc ddd eee , true, aaa]");
+        List<String> expected = Collections.singletonList("+I[1.1234, 2.123456787, 123, 12345, 1, 123123123, 123123123, 12.123, flink test, flink, flink_*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-01T12:10:30, 2015-01-01T12:10:30.123, 192.168.1.1, 1.2.3, aaa bbb ccc ddd eee , true, aaa]");
 
         assertEquals(expected, result);
     }
@@ -210,7 +222,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
 
         Iterator<Row> floatFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE float_col > 5 AND float_col < 6 ").collect();
         List<String> floatFilteredResult = collectResults(floatFiltered);
-        List<String> expectedFloatFiltered = Collections.singletonList("+I[5.1234, 5.123456787, 33, 8345, -200000, -900000000, 1200000000, 312.523, flink test 5, flink 1, flink_5*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-01T16:30:10, 192.168.1.5, 1.2.5, aaa bbb ccc ddd iii , false, mmm]");
+        List<String> expectedFloatFiltered = Collections.singletonList("+I[5.1234, 5.123456787, 33, 8345, -200000, -900000000, 1200000000, 312.523, flink test 5, flink 1, flink_5*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-01T16:30:10, 2015-01-01T16:30:10.567, 192.168.1.5, 1.2.5, aaa bbb ccc ddd iii , false, mmm]");
 
         assertEquals(expectedFloatFiltered, floatFilteredResult);
     }
@@ -221,7 +233,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
 
         Iterator<Row> doubleFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE double_col > 5 AND double_col < 6 ").collect();
         List<String> doubleFilteredResult = collectResults(doubleFiltered);
-        List<String> expectedDoubleFiltered = Collections.singletonList("+I[5.1234, 5.123456787, 33, 8345, -200000, -900000000, 1200000000, 312.523, flink test 5, flink 1, flink_5*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-01T16:30:10, 192.168.1.5, 1.2.5, aaa bbb ccc ddd iii , false, mmm]");
+        List<String> expectedDoubleFiltered = Collections.singletonList("+I[5.1234, 5.123456787, 33, 8345, -200000, -900000000, 1200000000, 312.523, flink test 5, flink 1, flink_5*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-01T16:30:10, 2015-01-01T16:30:10.567, 192.168.1.5, 1.2.5, aaa bbb ccc ddd iii , false, mmm]");
 
         assertEquals(expectedDoubleFiltered, doubleFilteredResult);
     }
@@ -232,7 +244,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
 
         Iterator<Row> byteFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE byte_col > 30 AND byte_col < 40 ").collect();
         List<String> byteFilteredResult = collectResults(byteFiltered);
-        List<String> expectedByteFiltered = Collections.singletonList("+I[5.1234, 5.123456787, 33, 8345, -200000, -900000000, 1200000000, 312.523, flink test 5, flink 1, flink_5*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-01T16:30:10, 192.168.1.5, 1.2.5, aaa bbb ccc ddd iii , false, mmm]");
+        List<String> expectedByteFiltered = Collections.singletonList("+I[5.1234, 5.123456787, 33, 8345, -200000, -900000000, 1200000000, 312.523, flink test 5, flink 1, flink_5*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-01T16:30:10, 2015-01-01T16:30:10.567, 192.168.1.5, 1.2.5, aaa bbb ccc ddd iii , false, mmm]");
 
         assertEquals(expectedByteFiltered, byteFilteredResult);
     }
@@ -243,7 +255,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
 
         Iterator<Row> shortFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE short_col > 15000 AND short_col < 16000 ").collect();
         List<String> shortFilteredResult = collectResults(shortFiltered);
-        List<String> expectedShortFiltered = Collections.singletonList("+I[8.1234, 8.123456787, 55, 15345, -80000, 0, 2100000000, 421.823, flink test 8, flink 1, flink_8*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-02T11:20:10, 192.168.2.1, 1.3.1, aaa bbb ccc jjj eee , true, www]");
+        List<String> expectedShortFiltered = Collections.singletonList("+I[8.1234, 8.123456787, 55, 15345, -80000, 0, 2100000000, 421.823, flink test 8, flink 1, flink_8*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-02T11:20:10, 2015-01-02T11:20:10.890, 192.168.2.1, 1.3.1, aaa bbb ccc jjj eee , true, www]");
 
         assertEquals(expectedShortFiltered, shortFilteredResult);
     }
@@ -254,7 +266,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
 
         Iterator<Row> integerFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE integer_col > 150000 AND integer_col < 250000 ").collect();
         List<String> integerFilteredResult = collectResults(integerFiltered);
-        List<String> expectedIntegerFiltered = Collections.singletonList("+I[12.1234, 12.123456787, 90, 23345, 200000, 1200000000, 3300000000, 856.835, flink test 12, flink 1, flink_12*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T11:30:10, 192.168.3.1, 1.3.5, aaa nnn ccc ddd eee , false, 6ad]");
+        List<String> expectedIntegerFiltered = Collections.singletonList("+I[12.1234, 12.123456787, 90, 23345, 200000, 1200000000, 3300000000, 856.835, flink test 12, flink 1, flink_12*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T11:30:10, 2015-01-03T11:30:10.234, 192.168.3.1, 1.3.5, aaa nnn ccc ddd eee , false, 6ad]");
 
         assertEquals(expectedIntegerFiltered, integerFilteredResult);
     }
@@ -265,7 +277,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
 
         Iterator<Row> longFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE long_col > 1000000000 AND long_col < 1300000000 ").collect();
         List<String> longFilteredResult = collectResults(longFiltered);
-        List<String> expectedLongFiltered = Collections.singletonList("+I[12.1234, 12.123456787, 90, 23345, 200000, 1200000000, 3300000000, 856.835, flink test 12, flink 1, flink_12*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T11:30:10, 192.168.3.1, 1.3.5, aaa nnn ccc ddd eee , false, 6ad]");
+        List<String> expectedLongFiltered = Collections.singletonList("+I[12.1234, 12.123456787, 90, 23345, 200000, 1200000000, 3300000000, 856.835, flink test 12, flink 1, flink_12*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T11:30:10, 2015-01-03T11:30:10.234, 192.168.3.1, 1.3.5, aaa nnn ccc ddd eee , false, 6ad]");
 
         assertEquals(expectedLongFiltered, longFilteredResult);
     }
@@ -276,7 +288,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
 
         Iterator<Row> unsignedLongFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE unsigned_long_col > 1700000000 AND unsigned_long_col < 1900000000 ").collect();
         List<String> unsignedLongFilteredResult = collectResults(unsignedLongFiltered);
-        List<String> expectedUnsignedLongFiltered = Collections.singletonList("+I[7.1234, 7.123456787, 48, 13345, -120000, -300000000, 1800000000, 412.723, flink test 7, flink 1, flink_7*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-02T08:50:10, 192.168.1.7, 1.3.0, aaa bbb ccc iii eee , true, sss]");
+        List<String> expectedUnsignedLongFiltered = Collections.singletonList("+I[7.1234, 7.123456787, 48, 13345, -120000, -300000000, 1800000000, 412.723, flink test 7, flink 1, flink_7*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-02T08:50:10, 2015-01-02T08:50:10.789, 192.168.1.7, 1.3.0, aaa bbb ccc iii eee , true, sss]");
 
         assertEquals(expectedUnsignedLongFiltered, unsignedLongFilteredResult);
     }
@@ -287,7 +299,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
 
         Iterator<Row> scaledFloatFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE scaled_float_col > 412.000 AND scaled_float_col < 412.500 ").collect();
         List<String> scaledFloatFilteredResult = collectResults(scaledFloatFiltered);
-        List<String> expectedScaledFloatFiltered = Collections.singletonList("+I[10.1234, 10.123456787, 72, 18345, 0, 600000000, 2700000000, 412.193, flink test 10, flink 1, flink_10*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T05:10:10, 192.168.2.3, 1.3.3, aaa lll ccc ddd eee , false, l5m]");
+        List<String> expectedScaledFloatFiltered = Collections.singletonList("+I[10.1234, 10.123456787, 72, 18345, 0, 600000000, 2700000000, 412.193, flink test 10, flink 1, flink_10*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T05:10:10, 2015-01-03T05:10:10.012, 192.168.2.3, 1.3.3, aaa lll ccc ddd eee , false, l5m]");
 
         assertEquals(expectedScaledFloatFiltered, scaledFloatFilteredResult);
     }
@@ -298,7 +310,7 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
 
         Iterator<Row> keywordFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE keyword_col = 'flink test 14' ").collect();
         List<String> keywordFilteredResult = collectResults(keywordFiltered);
-        List<String> expectedKeywordFiltered = Collections.singletonList("+I[14.1234, 14.123456787, 103, 29345, 400000, 1800000000, 3900000000, 698.024, flink test 14, flink 1, flink_14*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T17:50:10, 192.168.3.3, 1.4.0, ppp bbb ccc ddd eee , false, zxcvf]");
+        List<String> expectedKeywordFiltered = Collections.singletonList("+I[14.1234, 14.123456787, 103, 29345, 400000, 1800000000, 3900000000, 698.024, flink test 14, flink 1, flink_14*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T17:50:10, 2015-01-03T17:50:10.456, 192.168.3.3, 1.4.0, ppp bbb ccc ddd eee , false, zxcvf]");
 
         assertEquals(expectedKeywordFiltered, keywordFilteredResult);
     }
@@ -327,10 +339,31 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
     public void testFilterIpJdbcSource() {
         createNonPartitionedTable(INPUT_TABLE_2);
 
-        Iterator<Row> ipFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE ip_col LIKE '192.168.2.%' ").collect();
+        Iterator<Row> ipFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE CAST(ip_col AS VARCHAR) = '192.168.1.5' " ).collect();
         List<String> ipFilteredResult = collectResults(ipFiltered);
 
-        assertEquals(4, ipFilteredResult.size());
+        List<String> expectedIpFiltered = Collections.singletonList("+I[5.1234, 5.123456787, 33, 8345, -200000, -900000000, 1200000000, 312.523, flink test 5, flink 1, flink_5*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-01T16:30:10, 2015-01-01T16:30:10.567, 192.168.1.5, 1.2.5, aaa bbb ccc ddd iii , false, mmm]");
+
+        assertEquals(expectedIpFiltered, ipFilteredResult);
+    }
+
+    @Test
+    public void testFileterDateJdbcSource() {
+        createNonPartitionedTable(INPUT_TABLE_2);
+
+        Iterator<Row> dateFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE date_col > TO_TIMESTAMP('2015-01-01 17:30:10', 'yyyy-MM-dd HH:mm:ss') ").collect();
+        List<String> dateFilteredResult = collectResults(dateFiltered);
+
+        assertEquals(10, dateFilteredResult.size());
+    }
+
+    @Test
+    public void testFileterDate3JdbcSource() {
+        createNonPartitionedTable(INPUT_TABLE_2);
+
+        Iterator<Row> dateFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE date_millis_col > TO_TIMESTAMP('2015-01-02 12:10:30.234', 'yyyy-MM-dd HH:mm:ss.SSS') ").collect();
+        List<String> dateFilteredResult = collectResults(dateFiltered);
+        assertEquals(8, dateFilteredResult.size());
     }
 
     @Test
@@ -341,16 +374,6 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
         List<String> versionFilteredResult = collectResults(versionFiltered);
 
         assertEquals(4, versionFilteredResult.size());
-    }
-
-    @Test
-    public void testFilterTextJdbcSource() {
-        createNonPartitionedTable(INPUT_TABLE_2);
-
-        Iterator<Row> textFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE text_col >= 'aaa nnn ccc ddd eee ' AND text_col <= 'ppp bbb ccc ddd eee ' ").collect();
-        List<String> textFilteredResult = collectResults(textFiltered);
-
-        assertEquals(2, textFilteredResult.size());
     }
 
     @Test
@@ -377,21 +400,19 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
         Iterator<Row> textMultifieldFiltered1 = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE text_multifield_col = 'asd'").collect();
         List<String> textMultifieldFilteredResult1 = collectResults(textMultifieldFiltered1);
 
-        Iterator<Row> textMultifieldFiltered2 = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE text_multifield_col = 'dfg'").collect();
-        List<String> textMultifieldFilteredResult2 = collectResults(textMultifieldFiltered2);
+        Iterator<Row> textFiltered = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE text_col LIKE '% bbb ccc ddd %' ").collect();
+        List<String> textFilteredResult = collectResults(textFiltered);
 
-        Iterator<Row> textMultifieldFiltered3 = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE text_multifield_col = 'bfdsab'").collect();
-        List<String> textMultifieldFilteredResult3 = collectResults(textMultifieldFiltered3);
+        Iterator<Row> textFiltered2 = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE text_col >= 'ooo bbb ccc ddd eee ' ").collect();
+        List<String> textFilteredResult2 = collectResults(textFiltered2);
 
-        List<String> expectedTextMultifieldFiltered1 = Collections.singletonList("+I[11.1234, 11.123456787, 81, 21345, 100000, 900000000, 3000000000, 678.456, flink test 11, flink 1, flink_11*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T09:20:10, 192.168.2.4, 1.3.4, aaa mmm ccc ddd eee , true, asd]");
-        List<String> expectedTextMultifieldFiltered2 = Collections.singletonList("+I[11.1234, 11.123456787, 81, 21345, 100000, 900000000, 3000000000, 678.456, flink test 11, flink 1, flink_11*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T09:20:10, 192.168.2.4, 1.3.4, aaa mmm ccc ddd eee , true, dfg]");
-        List<String> expectedTextMultifieldFiltered3 = Collections.singletonList("+I[13.1234, 13.123456787, 95, 26345, 300000, 1500000000, 3600000000, 950.12, flink test 13, flink 1, flink_13*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T14:40:10, 192.168.3.2, 1.3.6, ooo bbb ccc ddd eee , true, bfdsab]");
+        List<String> expectedTextMultifieldFiltered1 = Collections.singletonList("+I[11.1234, 11.123456787, 81, 21345, 100000, 900000000, 3000000000, 678.456, flink test 11, flink 1, flink_11*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-03T09:20:10, 2015-01-03T09:20:10.123, 192.168.2.4, 1.3.4, aaa mmm ccc ddd eee , true, asd]");
 
         assertEquals(expectedTextMultifieldFiltered1, textMultifieldFilteredResult1);
-        assertEquals(expectedTextMultifieldFiltered2, textMultifieldFilteredResult2);
-        assertEquals(expectedTextMultifieldFiltered3, textMultifieldFilteredResult3);
-    }
+        assertEquals(8, textFilteredResult.size());
+        assertEquals(2, textFilteredResult2.size());
 
+    }
     @Test
     public void testFilterTextMultifieldAndBooleanJdbcSource() {
         createNonPartitionedTable(INPUT_TABLE_2);
@@ -402,8 +423,8 @@ public class ElasticTableSourceITCase extends AbstractTestBase {
         Iterator<Row> textMultifieldFiltered2 = tEnv.executeSql("SELECT * FROM " + INPUT_TABLE_2 + " WHERE byte_col = 41 AND text_multifield_col = 'qqq'").collect();
         List<String> textMultifieldFilteredResult2 = collectResults(textMultifieldFiltered2);
 
-        List<String> expectedTextMultifieldFiltered1 = Collections.singletonList("+I[6.1234, 6.123456787, 41, 11345, -150000, -600000000, 1500000000, 132.623, flink test 6, flink 1, flink_6*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-02T06:40:10, 192.168.1.6, 1.2.6, aaa bbb ccc hhh eee , true, ppp]");
-        List<String> expectedTextMultifieldFiltered2 = Collections.singletonList("+I[6.1234, 6.123456787, 41, 11345, -150000, -600000000, 1500000000, 132.623, flink test 6, flink 1, flink_6*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-02T06:40:10, 192.168.1.6, 1.2.6, aaa bbb ccc hhh eee , true, qqq]");
+        List<String> expectedTextMultifieldFiltered1 = Collections.singletonList("+I[6.1234, 6.123456787, 41, 11345, -150000, -600000000, 1500000000, 132.623, flink test 6, flink 1, flink_6*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-02T06:40:10, 2015-01-02T06:40:10.678, 192.168.1.6, 1.2.6, aaa bbb ccc hhh eee , true, ppp]");
+        List<String> expectedTextMultifieldFiltered2 = Collections.singletonList("+I[6.1234, 6.123456787, 41, 11345, -150000, -600000000, 1500000000, 132.623, flink test 6, flink 1, flink_6*, U29tZSBiaW5hcnkgYmxvYg==, 2015-01-02T06:40:10, 2015-01-02T06:40:10.678, 192.168.1.6, 1.2.6, aaa bbb ccc hhh eee , true, qqq]");
 
         assertEquals(expectedTextMultifieldFiltered1, textMultifieldFilteredResult1);
         assertEquals(expectedTextMultifieldFiltered2, textMultifieldFilteredResult2);

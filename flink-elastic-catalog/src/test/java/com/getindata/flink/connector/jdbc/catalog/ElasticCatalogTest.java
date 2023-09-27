@@ -452,8 +452,8 @@ public class ElasticCatalogTest extends ElasticCatalogTestBase {
         Schema expectedSchema = Schema.newBuilder().fromFields(
                 new String[]{"binary_col", "boolean_col", "byte_col",
                         "constant_keyword_col", "date_col", "date_epoch_col",
-                        "date_nanos_col", "double_col", "float_col",
-                        "half_float_col", "integer_col", "ip_col",
+                        "date_millis_col", "date_nanos_col", "double_col",
+                        "float_col", "half_float_col", "integer_col", "ip_col",
                         "keyword_col", "long_col", "scaled_float_col",
                         "short_col", "text_col", "text_multifield_col",
                         "unsigned_long_col", "version_col", "wildcard_col"},
@@ -464,6 +464,7 @@ public class ElasticCatalogTest extends ElasticCatalogTestBase {
                         DataTypes.STRING(),
                         DataTypes.TIMESTAMP(6),
                         DataTypes.TIMESTAMP(6),
+                        DataTypes.TIMESTAMP(3),
                         DataTypes.TIMESTAMP(6),
                         DataTypes.DOUBLE(),
                         DataTypes.FLOAT(),
@@ -676,6 +677,27 @@ public class ElasticCatalogTest extends ElasticCatalogTestBase {
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
         Map<String, String> properties = new HashMap<String, String>();
+        properties.put("properties.timeattribute.test_multiple_records_table.watermark.column", "date_millis_col");
+        properties.put("properties.timeattribute.test_multiple_records_table.watermark.delay", "'5' SECOND");
+
+        // when
+        ElasticCatalog catalog = new ElasticCatalog("test-catalog", "test-database", USERNAME,
+                PASSWORD, url, properties);
+        CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
+
+        // then
+        Schema schema = table.getUnresolvedSchema();
+        assertEquals(1, schema.getWatermarkSpecs().size());
+        System.out.println(schema);
+        assertEquals("[date_millis_col - INTERVAL '5' SECOND]", schema.getWatermarkSpecs().get(0).getWatermarkExpression().toString());
+    }
+
+    @Test
+    public void testGetTableGenerateWatermarkColumn() throws TableNotExistException {
+        // given
+        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
+                container.getElasticPort());
+        Map<String, String> properties = new HashMap<String, String>();
         properties.put("properties.timeattribute.test_multiple_records_table.watermark.column", "date_col");
         properties.put("properties.timeattribute.test_multiple_records_table.watermark.delay", "'5' SECOND");
 
@@ -686,9 +708,9 @@ public class ElasticCatalogTest extends ElasticCatalogTestBase {
 
         // then
         Schema schema = table.getUnresolvedSchema();
-
+        assertEquals(schema.getColumns().get(schema.getColumns().size() - 1).toString(), "`generated_watermark_column` AS [TO_TIMESTAMP_LTZ(date_col, 3)]");
         assertEquals(1, schema.getWatermarkSpecs().size());
-        assertEquals("[date_col - INTERVAL '5' SECOND]", schema.getWatermarkSpecs().get(0).getWatermarkExpression().toString());
+        assertEquals("[generated_watermark_column - INTERVAL '5' SECOND]", schema.getWatermarkSpecs().get(0).getWatermarkExpression().toString());
     }
 
     @Test

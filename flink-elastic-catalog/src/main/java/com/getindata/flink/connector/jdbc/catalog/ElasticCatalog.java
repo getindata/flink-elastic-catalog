@@ -16,6 +16,7 @@ import org.elasticsearch.xpack.sql.jdbc.EsDriver;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.Date;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -101,7 +102,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         // Splitting patterns and removing duplicates
 
         return Arrays.stream(
-                properties.getOrDefault("properties.index.patterns", "").split(",")
+                        properties.getOrDefault("properties.index.patterns", "").split(",")
                 )
                 .map(String::trim)
                 .filter(e -> !e.isEmpty())
@@ -152,8 +153,8 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
             if (!key.startsWith("properties.timeattribute.") ||
                     !(
                             key.endsWith(".watermark.column") ||
-                            key.endsWith(".watermark.delay") ||
-                            key.endsWith(".proctime.column")
+                                    key.endsWith(".watermark.delay") ||
+                                    key.endsWith(".proctime.column")
                     )
             ) {
                 continue;
@@ -244,15 +245,12 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
                     getPrimaryKey(metaData, null, getSchemaName(tablePath), getTableName(tablePath));
 
             ResultSetMetaData resultSetMetaData = retrieveResultSetMetaData(conn, tablePath);
-
             Map<String, DataType> columns = retrieveColumns(resultSetMetaData, tablePath);
-            String[] columnNames = columns.keySet().toArray(new String[0]);
-            DataType[] types = columns.values().toArray(new DataType[0]);
 
             String tableName = getSchemaTableName(tablePath);
             TimeAttributeProperties tableTimeAttributeProperties = timeAttributeProperties.get(tableName);
             checkTimeAttributeProperties(tableTimeAttributeProperties, tableName);
-            Schema tableSchema = buildSchema(columnNames, types, primaryKey, tableTimeAttributeProperties);
+            Schema tableSchema = buildSchema(columns, primaryKey, tableTimeAttributeProperties);
 
             ScanPartitionProperties properties = scanPartitionProperties.get(tableName);
 
@@ -265,12 +263,11 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
                 deducePartitionNumber(properties, conn, tableName);
 
                 checkScanPartitionNumber(properties.getPartitionNumber());
-                DataType type = retrievePartitionColumnDataType(
-                        columnNames,
-                        types,
-                        properties.getPartitionColumnName(),
-                        tableName
-                );
+                DataType type = columns.get(properties.getPartitionColumnName());
+                if (type == null) {
+                    throw new IllegalArgumentException(format("Partition column was not found in the specified table %s!",
+                            tableName));
+                }
 
                 checkScanPartitionColumnType(type);
                 calculateScanPartitionBounds(conn, tableName, isColumnTemporal(type), properties);
@@ -343,15 +340,6 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         }
     }
 
-    private DataType retrievePartitionColumnDataType(String[] columnNames, DataType[] types, String partitionColumnName, String tableName) {
-        for (int columnIndex = 0; columnIndex < columnNames.length; columnIndex++) {
-            if (Objects.equals(columnNames[columnIndex], partitionColumnName)) {
-                return types[columnIndex];
-            }
-        }
-        throw new IllegalArgumentException(format("Partition column was not found in the specified table %s!", tableName));
-    }
-
     private void checkScanPartitionColumnType(DataType type) {
         if (!(isColumnNumeric(type) || isColumnTemporal(type))) {
             throw new CatalogException(format("Partition column is of type %s. We support only NUMERIC, DATE and TIMESTAMP partition columns.", type));
@@ -374,16 +362,29 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     }
 
     private ResultSetMetaData retrieveResultSetMetaData(Connection conn, ObjectPath tablePath) throws java.sql.SQLException {
-        String query = format("SELECT * FROM \"%s\" LIMIT 0", getSchemaTableName(tablePath));
+        //String query = format("SELECT * FROM \"%s\" LIMIT 0", getSchemaTableName(tablePath));
+        //String query = format("SHOW COLUMNS FROM \"%s\"", getSchemaTableName(tablePath));
+        String query = format("SHOW CREATE TABLE \"%s\";", getSchemaTableName(tablePath));// , getSchemaTableName(tablePath));
         PreparedStatement ps = conn.prepareStatement(query);
         ResultSet rs = ps.executeQuery();
+
+        while (rs.next()) {
+            String currentColumnName = rs.getString(1);
+            String currentColumnType = rs.getString(2);
+
+            System.out.println(currentColumnName + " " + currentColumnType);
+        }
+
+        //int precision = rs.getMetaData().getPrecision(6);
+        //System.out.println(precision);
         return rs.getMetaData();
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Schema buildSchema(String[] columnNames, DataType[] types, Optional<UniqueConstraint> primaryKey,
+    private Schema buildSchema(Map<String, DataType> columns, Optional<UniqueConstraint> primaryKey,
                                TimeAttributeProperties timeAttributeProperties) {
-        Schema.Builder schemaBuilder = Schema.newBuilder().fromFields(columnNames, types);
+        Schema.Builder schemaBuilder = Schema.newBuilder().fromFields(columns.keySet().toArray(new String[0]),
+                columns.values().toArray(new DataType[0]));
         primaryKey.ifPresent(pk -> schemaBuilder.primaryKeyNamed(pk.getName(), pk.getColumns()));
 
         if (timeAttributeProperties != null) {
@@ -391,14 +392,34 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
             if (timeAttributeProperties.getProctimeColumn() != null) {
                 schemaBuilder.columnByExpression(timeAttributeProperties.getProctimeColumn(), "PROCTIME()");
             } else { // using watermarking
-                schemaBuilder.watermark(
-                        timeAttributeProperties.getWatermarkColumn(),
-                        timeAttributeProperties.getWatermarkColumn() +
-                                " - INTERVAL " +
-                                timeAttributeProperties.getWatermarkDelay());
+                String watermarkColumn = timeAttributeProperties.watermarkColumn;
+                String watermarkDelay = timeAttributeProperties.watermarkDelay;
+
+                if (isWatermarkColumnProperType(columns.get(watermarkColumn))) {
+                    schemaBuilder.watermark(
+                            timeAttributeProperties.getWatermarkColumn(),
+                            watermarkColumn + " - INTERVAL " + watermarkDelay
+                    );
+                } else { // if specified watermark column data type is not supported we add a watermark column to schema
+                    schemaBuilder.columnByExpression("generated_watermark_column", "TO_TIMESTAMP_LTZ(" +
+                            watermarkColumn + ", 3)");
+                    schemaBuilder.watermark(
+                            "generated_watermark_column",
+                            "generated_watermark_column - INTERVAL " + watermarkDelay
+                    );
+                }
             }
         }
         return schemaBuilder.build();
+    }
+
+    private boolean isWatermarkColumnProperType(DataType watermarkColumnDataType) {
+        return watermarkColumnDataType.equals(DataTypes.TIMESTAMP(1)) ||
+                watermarkColumnDataType.equals(DataTypes.TIMESTAMP(2)) ||
+                watermarkColumnDataType.equals(DataTypes.TIMESTAMP(3)) ||
+                watermarkColumnDataType.equals(DataTypes.TIMESTAMP_LTZ(1)) ||
+                watermarkColumnDataType.equals(DataTypes.TIMESTAMP_LTZ(2)) ||
+                watermarkColumnDataType.equals(DataTypes.TIMESTAMP_LTZ(3));
     }
 
     private boolean isColumnNumeric(DataType type) {
@@ -411,7 +432,16 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     }
 
     private boolean isColumnTemporal(DataType type) {
-        return type.equals(DataTypes.TIMESTAMP()) || type.equals(DataTypes.DATE());
+        return
+                type.equals(DataTypes.TIMESTAMP()) ||
+                type.equals(DataTypes.TIMESTAMP(1)) ||
+                type.equals(DataTypes.TIMESTAMP(2)) ||
+                type.equals(DataTypes.TIMESTAMP(3)) ||
+                type.equals(DataTypes.TIMESTAMP_LTZ(1)) ||
+                type.equals(DataTypes.TIMESTAMP_LTZ(2)) ||
+                type.equals(DataTypes.TIMESTAMP_LTZ(3)) ||
+                type.equals(DataTypes.DATE());
+        //return type.equals(DataTypes.TIMESTAMP()) || type.equals(DataTypes.DATE());
     }
 
     private int calculatePartitionNumberBasedOnPartitionSize(Connection conn, String tableName) {

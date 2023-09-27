@@ -18,6 +18,7 @@
       "wildcard_col": { "type": "wildcard" },
       "binary_col":  { "type": "text" },
       "date_col": { "type": "date" },
+      "date_millis_col": { "type": "date", "format": "date_time" },
       "date_nanos_col": { "type": "date_nanos" },
       "date_epoch_col": { "type":  "date", "format": "epoch_millis" },
       "ip_col": { "type": "ip" },
