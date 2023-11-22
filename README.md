@@ -104,3 +104,9 @@ The `scan.partition.upper-bound` will be calculated as the highest value in the 
 If we want a table to be partitioned it is necessary that we provide a catalog default or table specific option for partition column to use and
 catalog default or table specific partition number option for deciding how many partitions to use for a table.
 If only 1 option is provided we will receive an error.
+
+---
+
+## Implementation details
+
+A few `org.apache.flink.*` classes has been copied and shaded due to incorrect JDBC validation (`org.apache.flink.connector.jdbc.catalog.JdbcCatalogUtils.validateJdbcUrl`).

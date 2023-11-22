@@ -23,14 +23,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        flink: [ "1.15.1" ]
+        flink: [ "1.17.1" ]
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up JDK 8
+      - name: Set up JDK 11
         uses: actions/setup-java@v3
         with:
-          java-version: '8'
+          java-version: '11'
           distribution: 'adopt'
           cache: maven
 
@@ -38,4 +38,4 @@ jobs:
         run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} install -DskipTests
 
       - name: Tests for Flink ${{ matrix.flink }}
-        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} test
+        run: mvn $MAVEN_CLI_OPTS $JAVA_ADDITIONAL_OPTS -Dflink.version=${{ matrix.flink }} verify
