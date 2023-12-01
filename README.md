@@ -6,8 +6,6 @@
 
 This is an implementation of a [Flink Catalog](https://nightlies.apache.org/flink/flink-docs-master/docs/dev/table/catalogs/)
 for [Elastic](https://www.elastic.co/).
-Using this catalog (For example in EMR Notebooks) users will be able to get metadata information about the objects in
-Elastic.
 
 ---
 
@@ -106,20 +104,3 @@ The `scan.partition.upper-bound` will be calculated as the highest value in the 
 If we want a table to be partitioned it is necessary that we provide a catalog default or table specific option for partition column to use and
 catalog default or table specific partition number option for deciding how many partitions to use for a table.
 If only 1 option is provided we will receive an error.
-
----
-
-## flink-connector-jdbc
-
-The fork of [flink-connector-jdbc](https://github.com/apache/flink-connector-jdbc) (fork had been made even before the
-connector was separated from the main flink repo).
-
-The fork was created for several reasons:
-
-- Backport of [filter pushdown](https://github.com/apache/flink/pull/20140) feature to Flink 1.15.1.
-- Custom Elastic Dialect. There is a [Flink Jira ticket](https://issues.apache.org/jira/browse/FLINK-30702) to add it to
-  the official connector repo.
-- Minor adjustments were needed to implement Flink Catalog for Elastic (it is also planned to be contributed to the
-  official repo).
-
-Eventually, we want to get rid of this fork and use the official jars.
