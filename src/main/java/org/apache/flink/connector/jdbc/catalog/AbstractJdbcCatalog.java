@@ -18,6 +18,7 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
+import com.getindata.flink.connector.jdbc.catalog.JdbcCatalogUtils;
 import org.apache.flink.connector.jdbc.table.JdbcDynamicTableFactory;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.api.ValidationException;
@@ -107,7 +108,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(pwd));
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(baseUrl));
 
-        JdbcCatalogUtils.validateJdbcUrl(baseUrl);
+        com.getindata.flink.connector.jdbc.catalog.JdbcCatalogUtils.validateJdbcUrl(baseUrl);
 
         this.userClassLoader = userClassLoader;
         this.username = username;
