@@ -19,7 +19,6 @@
 package com.getindata.flink.connector.jdbc.catalog;
 
 import org.apache.commons.compress.utils.Lists;
-import org.apache.flink.connector.jdbc.catalog.AbstractJdbcCatalog;
 import org.apache.flink.connector.jdbc.table.JdbcDynamicTableFactory;
 import org.apache.flink.table.api.DataTypes;
 import org.apache.flink.table.api.Schema;

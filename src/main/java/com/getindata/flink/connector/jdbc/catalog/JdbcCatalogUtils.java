@@ -24,6 +24,10 @@ import static org.apache.flink.util.Preconditions.checkArgument;
 
 /** Utils for {@link JdbcCatalog}. */
 public class JdbcCatalogUtils {
+
+    private JdbcCatalogUtils() {
+    }
+
     /**
      * URL has to be without database, like "jdbc:postgresql://localhost:5432/" or
      * "jdbc:postgresql://localhost:5432" rather than "jdbc:postgresql://localhost:5432/db".
