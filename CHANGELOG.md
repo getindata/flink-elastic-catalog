@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+-   Project refactoring.
+-   Flink upgrade to 1.17.1.
+
 ## [0.0.3] - 2023-02-24
 
 -   Support partitioning for special character columns & Fix error in unit test.
