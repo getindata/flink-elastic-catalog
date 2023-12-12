@@ -10,8 +10,9 @@ import org.apache.flink.table.catalog.exceptions.CatalogException;
 import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 import org.apache.flink.table.types.AbstractDataType;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -19,11 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
+
 
 public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     private static final String INPUT_SINGLE_RECORD_TABLE = "test_single_record_table";
@@ -51,7 +53,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     private static final String PARTIAL_SCHEMA_PATH_2 = "elastic/test-index-partial2.json";
     private static final String SPECIAL_CHARACTER_COLUMN_NAMES_INDEX_PATH = "elastic/test-special-character-column-names-index.json";
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeAll() throws Exception {
         ElasticCatalogTestBase.beforeAll();
         createTestIndex(INPUT_SINGLE_RECORD_TABLE, INDEX_PATH);
