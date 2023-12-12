@@ -18,7 +18,6 @@
 
 package org.apache.flink.connector.jdbc.catalog;
 
-import com.getindata.flink.connector.jdbc.catalog.JdbcCatalogUtils;
 import org.apache.flink.connector.jdbc.table.JdbcDynamicTableFactory;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.api.ValidationException;
