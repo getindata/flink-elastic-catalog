@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.flink.connector.jdbc.catalog;
+package com.getindata.flink.connector.jdbc.catalog;
 
+import org.apache.commons.compress.utils.Lists;
 import org.apache.flink.connector.jdbc.table.JdbcDynamicTableFactory;
 import org.apache.flink.table.api.Schema;
 import org.apache.flink.table.api.ValidationException;
@@ -52,8 +53,6 @@ import org.apache.flink.table.types.DataType;
 import org.apache.flink.util.Preconditions;
 import org.apache.flink.util.StringUtils;
 import org.apache.flink.util.TemporaryClassLoaderContext;
-
-import org.apache.commons.compress.utils.Lists;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +72,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 
+import static com.getindata.flink.connector.jdbc.catalog.JdbcCatalogUtils.validateJdbcUrl;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.PASSWORD;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.TABLE_NAME;
 import static org.apache.flink.connector.jdbc.table.JdbcConnectorOptions.URL;
@@ -107,7 +107,7 @@ public abstract class AbstractJdbcCatalog extends AbstractCatalog {
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(pwd));
         checkArgument(!StringUtils.isNullOrWhitespaceOnly(baseUrl));
 
-        JdbcCatalogUtils.validateJdbcUrl(baseUrl);
+        validateJdbcUrl(baseUrl);
 
         this.userClassLoader = userClassLoader;
         this.username = username;

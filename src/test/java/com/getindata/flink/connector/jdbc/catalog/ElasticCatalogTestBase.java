@@ -6,7 +6,7 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
 import org.apache.commons.compress.utils.IOUtils;
-import org.junit.BeforeClass;
+import org.junit.jupiter.api.BeforeAll;
 
 import java.io.IOException;
 import java.time.LocalDate;
@@ -29,7 +29,7 @@ class ElasticCatalogTestBase {
     private static final int REQUEST_RETRY_MAX_COUNT = 3;
     private static final int TIMEOUT_IN_SECONDS = 3;
 
-    @BeforeClass
+    @BeforeAll
     public static void beforeAll() throws Exception {
         container.withEnv("xpack.security.enabled", "true");
         container.withEnv("ELASTIC_PASSWORD", PASSWORD);

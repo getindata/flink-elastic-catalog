@@ -46,15 +46,6 @@
     <flink-connector-jdbc-elasticsearch-dialect.version>0.2.0</flink-connector-jdbc-elasticsearch-dialect.version>
 
     <!-- Test properties -->
-    <test.unit.pattern>**/*Test.*</test.unit.pattern>
-    <flink.XmxITCase>2048m</flink.XmxITCase>
-    <flink.XmxUnitTest>1024m</flink.XmxUnitTest>
-    <!-- Number of forkCounts for ITCase and UnitTest should take into account allocated memory
-     to the jvm (-Xmx) and the available memory on the machine running the test -->
-    <flink.forkCountITCase>2</flink.forkCountITCase>
-    <flink.forkCountUnitTest>4</flink.forkCountUnitTest>
-    <flink.surefire.baseArgLine>-XX:+UseG1GC -Xms256m</flink.surefire.baseArgLine>
-
     <junit.version>5.9.1</junit.version>
     <okhttp.version>4.10.0</okhttp.version>
     <testcontainers.version>1.18.2</testcontainers.version>
@@ -94,57 +85,11 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.0.0-M8</version>
         <configuration>
-          <!-- enables TCP/IP communication between surefire and forked JVM-->
-          <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory"/>
-          <trimStackTrace>false</trimStackTrace>
-          <systemPropertyVariables>
-            <forkNumber>0${surefire.forkNumber}</forkNumber>
-            <!-- $$ ensures that surefire resolves this to the current forkNumber,
-                 instead of maven during initialization -->
-            <mvn.forkNumber>$${surefire.forkNumber}</mvn.forkNumber>
-            <user.country>US</user.country>
-            <user.language>en</user.language>
-            <project.basedir>${project.basedir}</project.basedir>
-            <junit.jupiter.extensions.autodetection.enabled>true</junit.jupiter.extensions.autodetection.enabled>
-          </systemPropertyVariables>
-          <argLine>-Xms256m -Xmx2048m -XX:+UseG1GC</argLine>
+          <includes>
+            <include>**/*Test.*</include>
+            <include>**/*ITCase.*</include>
+          </includes>
         </configuration>
-        <executions>
-          <execution>
-            <!--execute all the unit tests-->
-            <id>default-test</id>
-            <phase>test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>${test.unit.pattern}</include>
-              </includes>
-              <forkCount>${flink.forkCountUnitTest}</forkCount>
-              <argLine>${flink.surefire.baseArgLine} -Xmx${flink.XmxUnitTest}</argLine>
-            </configuration>
-          </execution>
-          <execution>
-            <!--execute all the integration tests-->
-            <id>integration-tests</id>
-            <phase>integration-test</phase>
-            <goals>
-              <goal>test</goal>
-            </goals>
-            <configuration>
-              <includes>
-                <include>**/*.*</include>
-              </includes>
-              <excludes>
-                <exclude>${test.unit.pattern}</exclude>
-              </excludes>
-              <forkCount>${flink.forkCountITCase}</forkCount>
-              <argLine>${flink.surefire.baseArgLine} -Xmx${flink.XmxITCase}</argLine>
-              <reuseForks>false</reuseForks>
-            </configuration>
-          </execution>
-        </executions>
       </plugin>
 
       <plugin>
@@ -256,12 +201,6 @@
       <groupId>com.squareup.okhttp3</groupId>
       <artifactId>okhttp</artifactId>
       <version>${okhttp.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.flink</groupId>
-      <artifactId>flink-table-api-java</artifactId>
-      <version>${flink.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>
