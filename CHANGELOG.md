@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Intepret GEO_POINT type as string.
+
 ## [0.0.4] - 2023-12-12
 
 -   Project refactoring.

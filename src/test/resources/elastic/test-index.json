@@ -24,7 +24,8 @@
       "version_col": { "type": "text" },
       "text_col": { "type": "text" },
       "boolean_col": {"type": "boolean"},
-      "text_multifield_col": {"type": "text", "fields": {"raw": {"type":  "keyword"}}}
+      "text_multifield_col": {"type": "text", "fields": {"raw": {"type":  "keyword"}}},
+      "geo_point_col": {"type": "geo_point"}
     }
   }
 }
