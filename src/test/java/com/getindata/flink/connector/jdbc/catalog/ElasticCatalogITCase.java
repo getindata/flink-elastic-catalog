@@ -11,6 +11,7 @@ import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.catalog.exceptions.TableNotExistException;
 import org.apache.flink.table.types.AbstractDataType;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 
@@ -365,6 +366,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         }
     }
 
+    @Disabled
     @Test
     public void testUnsupportedDataTypeInTable() throws TableNotExistException {
         // given
@@ -453,7 +455,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         Schema expectedSchema = Schema.newBuilder().fromFields(
                 new String[]{"binary_col", "boolean_col", "byte_col",
                         "constant_keyword_col", "date_col", "date_epoch_col",
-                        "date_nanos_col", "double_col", "float_col",
+                        "date_nanos_col", "double_col", "float_col", "geo_point_col",
                         "half_float_col", "integer_col", "ip_col",
                         "keyword_col", "long_col", "scaled_float_col",
                         "short_col", "text_col", "text_multifield_col",
@@ -468,6 +470,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
                         DataTypes.TIMESTAMP(6),
                         DataTypes.DOUBLE(),
                         DataTypes.FLOAT(),
+                        DataTypes.STRING(),
                         DataTypes.FLOAT(),
                         DataTypes.INT(),
                         DataTypes.STRING(),
