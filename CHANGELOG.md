@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.0] - 2023-12-13
+
 -   Intepret GEO_POINT type as string.
 
 ## [0.0.4] - 2023-12-12
@@ -23,7 +25,9 @@
 
 -   Initial implementation of Flink Catalog for Elastic
 
-[Unreleased]: https://github.com/getindata/flink-elastic-catalog/compare/0.0.4...HEAD
+[Unreleased]: https://github.com/getindata/flink-elastic-catalog/compare/0.1.0...HEAD
+
+[0.1.0]: https://github.com/getindata/flink-elastic-catalog/compare/0.0.4...0.1.0
 
 [0.0.4]: https://github.com/getindata/flink-elastic-catalog/compare/0.0.3...0.0.4
 
