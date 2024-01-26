@@ -127,6 +127,25 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     }
 
     @Test
+    public void testTableFiltering() throws DatabaseNotExistException {
+        // given
+        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
+                container.getElasticPort());
+
+        // when
+        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database",
+                USERNAME, PASSWORD, url, IndexFilterResolver.of("test_m.*", "test_mi.*"));
+
+        // then
+        List<String> tables = catalog.listTables("docker-cluster");
+        List<String> expectedTables = new LinkedList<>();
+        expectedTables.add("test_multiple_records_table");
+
+        assertEquals(1, tables.size());
+        assertTrue(tables.containsAll(expectedTables));
+    }
+
+    @Test
     public void testTableExists() throws DatabaseNotExistException {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
@@ -193,7 +212,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath(
                 "docker-cluster", "test_multiple_records_table"));
 
@@ -218,7 +237,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath(
                 "docker-cluster",
                 "test_multiple_records_table"));
@@ -243,7 +262,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_empty_table"));
 
         // then
@@ -268,7 +287,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -289,7 +308,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -311,7 +330,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_missing_date_col_table"));
 
@@ -333,7 +352,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_single_record_table"));
 
@@ -355,7 +374,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -397,7 +416,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -423,7 +442,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -445,7 +464,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_*_record_table"));
 
         // then
@@ -507,7 +526,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_*_record*_table"));
         CatalogBaseTable table2 = catalog.getTable(new ObjectPath("docker-cluster", "test_partial_schema_table_*"));
 
@@ -542,7 +561,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         catalog.getTable(new ObjectPath("docker-cluster", "test_partial_schema_table_*"));
 
         // then
@@ -563,7 +582,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_partial_schema_table_*"));
 
         Schema expectedSchema = Schema.newBuilder().fromFields(
@@ -601,7 +620,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_special_character_column_names_table"));
 
         // then
@@ -654,6 +673,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
                 USERNAME,
                 PASSWORD,
                 url,
+                IndexFilterResolver.acceptAll(),
                 properties
         );
         CatalogBaseTable table = catalog.getTable(new ObjectPath(
@@ -686,7 +706,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -708,7 +728,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -729,7 +749,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
         // when
         ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, properties);
+                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 

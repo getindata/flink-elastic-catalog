@@ -19,7 +19,6 @@
 package com.getindata.flink.connector.jdbc.catalog;
 
 import org.apache.flink.configuration.ConfigOption;
-import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.table.catalog.Catalog;
 import org.apache.flink.table.factories.CatalogFactory;
 import org.apache.flink.table.factories.FactoryUtil;
@@ -31,31 +30,15 @@ import java.util.stream.Collectors;
 
 import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.BASE_URL;
 import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.DEFAULT_DATABASE;
+import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.DEFAULT_SCAN_PARTITION_COLUMN_NAME;
+import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.DEFAULT_SCAN_PARTITION_SIZE;
+import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.EXCLUDE;
+import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.INCLUDE;
 import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.PASSWORD;
+import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.PROPERTIES_INDEX_PATTERNS;
 import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.USERNAME;
 
 public class ElasticJdbcCatalogFactory implements CatalogFactory {
-
-    public static final ConfigOption<String> DEFAULT_SCAN_PARTITION_COLUMN_NAME =
-            ConfigOptions.key("catalog.default.scan.partition.column.name")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription(
-                            "Catalog default scan partition column name.");
-
-    public static final ConfigOption<Integer> DEFAULT_SCAN_PARTITION_SIZE =
-            ConfigOptions.key("catalog.default.scan.partition.size")
-                    .intType()
-                    .noDefaultValue()
-                    .withDescription(
-                            "Catalog default scan partition size.");
-
-    public static final ConfigOption<String> PROPERTIES_INDEX_PATTERNS =
-            ConfigOptions.key("properties.index.patterns")
-                    .stringType()
-                    .noDefaultValue()
-                    .withDescription(
-                            "Index patterns.");
 
     @Override
     public String factoryIdentifier() {
@@ -78,6 +61,8 @@ public class ElasticJdbcCatalogFactory implements CatalogFactory {
         options.add(DEFAULT_SCAN_PARTITION_COLUMN_NAME);
         options.add(DEFAULT_SCAN_PARTITION_SIZE);
         options.add(PROPERTIES_INDEX_PATTERNS);
+        options.add(EXCLUDE);
+        options.add(INCLUDE);
         return options;
     }
 
@@ -95,6 +80,7 @@ public class ElasticJdbcCatalogFactory implements CatalogFactory {
                 helper.getOptions().get(USERNAME),
                 helper.getOptions().get(PASSWORD),
                 helper.getOptions().get(BASE_URL),
+                IndexFilterResolver.of(helper.getOptions().get(INCLUDE), helper.getOptions().get(EXCLUDE)),
                 context.getOptions()
         );
     }

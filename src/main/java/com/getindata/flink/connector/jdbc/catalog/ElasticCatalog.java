@@ -83,6 +83,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     private final Map<String, ScanPartitionProperties> scanPartitionProperties;
     private final Map<String, TimeAttributeProperties> timeAttributeProperties;
     private final List<String> indexPatterns;
+    private final IndexFilterResolver indexFilterResolver;
 
     public ElasticCatalog(ClassLoader userClassLoader,
                           String catalogName,
@@ -90,7 +91,8 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
                           String username,
                           String password,
                           String baseUrl) {
-        this(userClassLoader, catalogName, defaultDatabase, username, password, baseUrl, new HashMap<>());
+        this(userClassLoader, catalogName, defaultDatabase, username, password, baseUrl,
+                IndexFilterResolver.acceptAll(), new HashMap<>());
     }
 
     public ElasticCatalog(ClassLoader userClassLoader,
@@ -99,6 +101,18 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
                           String username,
                           String password,
                           String baseUrl,
+                          IndexFilterResolver indexFilterResolver) {
+        this(userClassLoader, catalogName, defaultDatabase, username, password, baseUrl, indexFilterResolver,
+                new HashMap<>());
+    }
+
+    public ElasticCatalog(ClassLoader userClassLoader,
+                          String catalogName,
+                          String defaultDatabase,
+                          String username,
+                          String password,
+                          String baseUrl,
+                          IndexFilterResolver indexFilterResolver,
                           Map<String, String> properties) {
         super(userClassLoader, catalogName, defaultDatabase, username, password, baseUrl);
         this.dialectTypeMapper = new ElasticTypeMapper();
@@ -108,6 +122,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         this.catalogDefaultScanPartitionCapacity = catalogDefaultScanProperties[1];
         this.scanPartitionProperties = extractScanTablePartitionProperties(properties);
         this.timeAttributeProperties = extractTimeAttributeProperties(properties);
+        this.indexFilterResolver = indexFilterResolver;
     }
 
     private String[] extractCatalogDefaultScanProperties(Map<String, String> properties) {
@@ -253,7 +268,10 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
             try (Statement statement = connection.createStatement();
                  ResultSet results = statement.executeQuery("SHOW TABLES CATALOG '" + databaseName + "'")) {
                 while (results.next()) {
-                    tables.add(results.getString(2));
+                    String tableName = results.getString(2);
+                    if (indexFilterResolver.isAccepted(tableName)) {
+                        tables.add(results.getString(2));
+                    }
                 }
             }
         } catch (SQLException e) {
