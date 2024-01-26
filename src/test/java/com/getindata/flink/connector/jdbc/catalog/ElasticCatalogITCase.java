@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -84,6 +85,19 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         TimeUnit.SECONDS.sleep(1);
     }
 
+    private ElasticCatalogBuilder catalogBuilder() {
+        return ElasticCatalogBuilder.anElasticCatalog()
+                .userClassLoader(this.getClass().getClassLoader())
+                .catalogName("test-catalog")
+                .defaultDatabase("test-database")
+                .username(USERNAME)
+                .password(PASSWORD)
+                .baseUrl(url)
+                .addProctimeColumn(false)
+                .indexFilterResolver(IndexFilterResolver.acceptAll())
+                .properties(Collections.emptyMap());
+    }
+
     @Test
     public void testListDatabases() throws DatabaseNotExistException, TableNotExistException {
         // given
@@ -91,8 +105,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database",
-                USERNAME, PASSWORD, url);
+        ElasticCatalog catalog = catalogBuilder().build();
 
         // then
         List<String> databases = catalog.listDatabases();
@@ -107,8 +120,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database",
-                USERNAME, PASSWORD, url);
+        ElasticCatalog catalog = catalogBuilder().build();
 
         // then
         List<String> tables = catalog.listTables("docker-cluster");
@@ -133,8 +145,9 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database",
-                USERNAME, PASSWORD, url, IndexFilterResolver.of("test_m.*", "test_mi.*"));
+        ElasticCatalog catalog = catalogBuilder()
+                .indexFilterResolver(IndexFilterResolver.of("test_m.*", "test_mi.*"))
+                .build();
 
         // then
         List<String> tables = catalog.listTables("docker-cluster");
@@ -152,8 +165,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database",
-                USERNAME, PASSWORD, url);
+        ElasticCatalog catalog = catalogBuilder().build();
 
         // then
         assertTrue(catalog.tableExists(new ObjectPath("docker-cluster", "test_single_record_table")));
@@ -173,8 +185,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database",
-                USERNAME, PASSWORD, url);
+        ElasticCatalog catalog = catalogBuilder().build();
 
         // then
         assertFalse(catalog.tableExists(new ObjectPath("docker-cluster", "nonexisting_table")));
@@ -187,8 +198,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database",
-                USERNAME, PASSWORD, url);
+        ElasticCatalog catalog = catalogBuilder().build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath(
                 "docker-cluster", "test_multiple_records_table"));
 
@@ -211,8 +221,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath(
                 "docker-cluster", "test_multiple_records_table"));
 
@@ -236,8 +245,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath(
                 "docker-cluster",
                 "test_multiple_records_table"));
@@ -261,8 +269,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("catalog.default.scan.partition.size", "100");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_empty_table"));
 
         // then
@@ -286,8 +293,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -307,8 +313,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.scan.test_multiple_records_table.partition.column.name", "date_col");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -329,8 +334,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.scan.test_missing_date_col_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_missing_date_col_table"));
 
@@ -351,8 +355,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.scan.test_single_record_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_single_record_table"));
 
@@ -373,8 +376,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.scan.test_multiple_records_table.partition.number", "0");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
@@ -393,8 +395,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
                 container.getElasticPort());
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url);
+        ElasticCatalog catalog = catalogBuilder().build();
         try {
             catalog.getTable(new ObjectPath("docker-cluster", "test_unsupported_data_type_table"));
 
@@ -415,8 +416,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("catalog.default.scan.partition.size", "5");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -441,8 +441,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("catalog.default.scan.partition.size", "5");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
 
         // then
@@ -463,8 +462,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.index.patterns", "test_*_record_table");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_*_record_table"));
 
         // then
@@ -525,8 +523,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.index.patterns", "test_*_record*_table,test_partial_schema_table_*");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_*_record*_table"));
         CatalogBaseTable table2 = catalog.getTable(new ObjectPath("docker-cluster", "test_partial_schema_table_*"));
 
@@ -560,8 +557,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.index.patterns", "test_partial_schema_table_*, test_partial_schema_table_*");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         catalog.getTable(new ObjectPath("docker-cluster", "test_partial_schema_table_*"));
 
         // then
@@ -581,8 +577,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.index.patterns", "test_partial_schema_table_*");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_partial_schema_table_*"));
 
         Schema expectedSchema = Schema.newBuilder().fromFields(
@@ -619,8 +614,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         properties.put("properties.scan.test_special_character_column_names_table.partition.number", "10");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
+        ElasticCatalog catalog = catalogBuilder().properties(properties).build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_special_character_column_names_table"));
 
         // then
@@ -662,20 +656,9 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
-        properties.put("properties.timeattribute.test_multiple_records_table.proctime.column", "my_proctime");
 
         // when
-        ElasticCatalog catalog = new ElasticCatalog(
-                this.getClass().getClassLoader(),
-                "test-catalog",
-                "test-database",
-                USERNAME,
-                PASSWORD,
-                url,
-                IndexFilterResolver.acceptAll(),
-                properties
-        );
+        ElasticCatalog catalog = catalogBuilder().addProctimeColumn(true).build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath(
                 "docker-cluster",
                 "test_multiple_records_table"
@@ -689,74 +672,9 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         List<UnresolvedColumn> columns = schema.getColumns();
         UnresolvedColumn actualColumn = columns.get(columns.size() - 1);
         UnresolvedComputedColumn expectedColumn = (UnresolvedComputedColumn) Schema.newBuilder().columnByExpression(
-                "my_proctime",
+                "proctime",
                 "PROCTIME()"
         ).build().getColumns().get(0);
         assertEquals(actualColumn, expectedColumn);
-    }
-
-    @Test
-    public void testGetTableTimeAttributesWatermark() throws TableNotExistException {
-        // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
-        properties.put("properties.timeattribute.test_multiple_records_table.watermark.column", "date_col");
-        properties.put("properties.timeattribute.test_multiple_records_table.watermark.delay", "'5' SECOND");
-
-        // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
-        CatalogBaseTable table = catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
-
-        // then
-        Schema schema = table.getUnresolvedSchema();
-
-        assertEquals(1, schema.getWatermarkSpecs().size());
-        assertEquals("[date_col - INTERVAL '5' SECOND]", schema.getWatermarkSpecs().get(0).getWatermarkExpression().toString());
-    }
-
-    @Test
-    public void testFailGetTableTimeAttributesProctimeAndWatermarkProvided() throws TableNotExistException {
-        // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
-        properties.put("properties.timeattribute.test_multiple_records_table.proctime.column", "my_proctime");
-        properties.put("properties.timeattribute.test_multiple_records_table.watermark.column", "date_col");
-        properties.put("properties.timeattribute.test_multiple_records_table.watermark.delay", "'5' SECOND");
-
-        // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
-        try {
-            catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
-
-            // then
-            fail("Should have thrown CatalogException");
-        } catch (CatalogException e) {
-            assertTrue(e.getCause().getMessage().contains("Either proctime or watermark properties should be specified for a table test_multiple_records_table."));
-        }
-    }
-
-    @Test
-    public void testFailGetTableWithWatermarkMissingProperty() throws TableNotExistException {
-        // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
-        properties.put("properties.timeattribute.test_multiple_records_table.watermark.column", "date_col");
-
-        // when
-        ElasticCatalog catalog = new ElasticCatalog(this.getClass().getClassLoader(), "test-catalog", "test-database", USERNAME,
-                PASSWORD, url, IndexFilterResolver.acceptAll(), properties);
-        try {
-            catalog.getTable(new ObjectPath("docker-cluster", "test_multiple_records_table"));
-
-            // then
-            fail("Should have thrown CatalogException");
-        } catch (CatalogException e) {
-            assertTrue(e.getCause().getMessage().contains("You should specify both watermarkDelay and watermarkColumn properties when using watermark for a table test_multiple_records_table."));
-        }
     }
 }
