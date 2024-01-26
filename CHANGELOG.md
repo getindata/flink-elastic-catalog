@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.1.1] - 2024-01-26
+
 -   Add `catalog.include` and `catalog.exclude` options.
 -   Allow to add `proctime` column to tables.
 
@@ -28,7 +30,9 @@
 
 -   Initial implementation of Flink Catalog for Elastic
 
-[Unreleased]: https://github.com/getindata/flink-elastic-catalog/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-elastic-catalog/compare/0.1.1...HEAD
+
+[0.1.1]: https://github.com/getindata/flink-elastic-catalog/compare/0.1.0...0.1.1
 
 [0.1.0]: https://github.com/getindata/flink-elastic-catalog/compare/0.0.4...0.1.0
 
