@@ -7,7 +7,7 @@
   <groupId>com.getindata</groupId>
   <artifactId>flink-elastic-catalog</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.1-SNAPSHOT</version>
+  <version>0.1.1</version>
 
   <name>flink-elastic-catalog</name>
   <description>Flink Catalog for Elastic.</description>
