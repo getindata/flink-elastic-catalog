@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Add `catalog.include` and `catalog.exclude` options.
+
 ## [0.1.0] - 2023-12-13
 
 -   Intepret GEO_POINT type as string.

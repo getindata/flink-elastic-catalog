@@ -51,6 +51,39 @@ public class ElasticJdbcCatalogFactoryOptions {
             .noDefaultValue()
             .withDescription("Url of ElasticSearch.");
 
+    public static final ConfigOption<String> DEFAULT_SCAN_PARTITION_COLUMN_NAME =
+            ConfigOptions.key("catalog.default.scan.partition.column.name")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Catalog default scan partition column name.");
+
+    public static final ConfigOption<Integer> DEFAULT_SCAN_PARTITION_SIZE =
+            ConfigOptions.key("catalog.default.scan.partition.size")
+                    .intType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Catalog default scan partition size.");
+
+    public static final ConfigOption<String> PROPERTIES_INDEX_PATTERNS =
+            ConfigOptions.key("properties.index.patterns")
+                    .stringType()
+                    .noDefaultValue()
+                    .withDescription(
+                            "Index patterns.");
+
+    public static final ConfigOption<String> EXCLUDE =
+        ConfigOptions.key("catalog.exclude")
+            .stringType()
+            .noDefaultValue()
+            .withDescription("Comma-separated list of index/datastream exclude patterns.");
+
+    public static final ConfigOption<String> INCLUDE =
+        ConfigOptions.key("catalog.exclude")
+            .stringType()
+            .noDefaultValue()
+            .withDescription("Comma-separated list of index/datastream include patterns.");
+
     private ElasticJdbcCatalogFactoryOptions() {
     }
 }
