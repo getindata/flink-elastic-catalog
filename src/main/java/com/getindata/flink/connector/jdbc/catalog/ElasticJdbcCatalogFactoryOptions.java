@@ -72,6 +72,12 @@ public class ElasticJdbcCatalogFactoryOptions {
                     .withDescription(
                             "Index patterns.");
 
+    public static final ConfigOption<Boolean> ADD_PROCTIME_COLUMN =
+            ConfigOptions.key("catalog.add-proctime-column")
+                    .booleanType()
+                    .defaultValue(false)
+                    .withDescription("Indicates if proctime column should be added to all tables.");
+
     public static final ConfigOption<String> EXCLUDE =
         ConfigOptions.key("catalog.exclude")
             .stringType()

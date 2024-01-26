@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 -   Add `catalog.include` and `catalog.exclude` options.
+-   Allow to add `proctime` column to tables.
 
 ## [0.1.0] - 2023-12-13
 

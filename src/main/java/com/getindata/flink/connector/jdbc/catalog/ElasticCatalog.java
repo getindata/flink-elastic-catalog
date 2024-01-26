@@ -46,6 +46,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -81,7 +82,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     private final String catalogDefaultScanPartitionColumnName;
     private final String catalogDefaultScanPartitionCapacity;
     private final Map<String, ScanPartitionProperties> scanPartitionProperties;
-    private final Map<String, TimeAttributeProperties> timeAttributeProperties;
+    private final boolean addProctimeColumn;
     private final List<String> indexPatterns;
     private final IndexFilterResolver indexFilterResolver;
 
@@ -92,7 +93,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
                           String password,
                           String baseUrl) {
         this(userClassLoader, catalogName, defaultDatabase, username, password, baseUrl,
-                IndexFilterResolver.acceptAll(), new HashMap<>());
+                false, IndexFilterResolver.acceptAll(), Collections.emptyMap());
     }
 
     public ElasticCatalog(ClassLoader userClassLoader,
@@ -101,17 +102,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
                           String username,
                           String password,
                           String baseUrl,
-                          IndexFilterResolver indexFilterResolver) {
-        this(userClassLoader, catalogName, defaultDatabase, username, password, baseUrl, indexFilterResolver,
-                new HashMap<>());
-    }
-
-    public ElasticCatalog(ClassLoader userClassLoader,
-                          String catalogName,
-                          String defaultDatabase,
-                          String username,
-                          String password,
-                          String baseUrl,
+                          boolean addProctimeColumn,
                           IndexFilterResolver indexFilterResolver,
                           Map<String, String> properties) {
         super(userClassLoader, catalogName, defaultDatabase, username, password, baseUrl);
@@ -121,7 +112,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         this.catalogDefaultScanPartitionColumnName = catalogDefaultScanProperties[0];
         this.catalogDefaultScanPartitionCapacity = catalogDefaultScanProperties[1];
         this.scanPartitionProperties = extractScanTablePartitionProperties(properties);
-        this.timeAttributeProperties = extractTimeAttributeProperties(properties);
+        this.addProctimeColumn = addProctimeColumn;
         this.indexFilterResolver = indexFilterResolver;
     }
 
@@ -183,50 +174,6 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
             }
         }
         return scanPartitionProperties;
-    }
-
-    private Map<String, TimeAttributeProperties> extractTimeAttributeProperties(Map<String, String> properties) {
-        Map<String, TimeAttributeProperties> timeAttributeProperties = new HashMap<>();
-
-        for (Map.Entry<String, String> entry : properties.entrySet()) {
-            String key = entry.getKey();
-            if (!key.startsWith("properties.timeattribute.") ||
-                    !(
-                            key.endsWith(".watermark.column") ||
-                                    key.endsWith(".watermark.delay") ||
-                                    key.endsWith(".proctime.column")
-                    )
-            ) {
-                continue;
-            }
-            String tableName = key.replace("properties.timeattribute.", "").
-                    replace(".watermark.column", "").
-                    replace(".watermark.delay", "").
-                    replace(".proctime.column", "");
-            boolean timeAttributePropertiesForTableFound = timeAttributeProperties.containsKey(tableName);
-            TimeAttributeProperties timeAttributePropertiesForTable = timeAttributePropertiesForTableFound
-                    ? timeAttributeProperties.get(tableName)
-                    : new TimeAttributeProperties();
-
-            if (entry.getKey().endsWith(".watermark.column")) {
-                if (timeAttributePropertiesForTable.getWatermarkColumn() == null) {
-                    timeAttributePropertiesForTable.setWatermarkColumn(entry.getValue());
-                }
-            } else if (entry.getKey().endsWith(".watermark.delay")) {
-                if (timeAttributePropertiesForTable.getWatermarkDelay() == null) {
-                    timeAttributePropertiesForTable.setWatermarkDelay(entry.getValue());
-                }
-            } else if (entry.getKey().endsWith(".proctime.column")) {
-                if (timeAttributePropertiesForTable.getProctimeColumn() == null) {
-                    timeAttributePropertiesForTable.setProctimeColumn(entry.getValue());
-                }
-            }
-            // Adding a new watermarkProperties to the map
-            if (!timeAttributePropertiesForTableFound) {
-                timeAttributeProperties.put(tableName, timeAttributePropertiesForTable);
-            }
-        }
-        return timeAttributeProperties;
     }
 
     @Override
@@ -310,9 +257,7 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
             DataType[] types = columns.values().toArray(new DataType[0]);
 
             String tableName = getSchemaTableName(tablePath);
-            TimeAttributeProperties tableTimeAttributeProperties = timeAttributeProperties.get(tableName);
-            checkTimeAttributeProperties(tableTimeAttributeProperties, tableName);
-            Schema tableSchema = buildSchema(columnNames, types, primaryKey, tableTimeAttributeProperties);
+            Schema tableSchema = buildSchema(columnNames, types, primaryKey);
 
             ScanPartitionProperties properties = scanPartitionProperties.get(tableName);
 
@@ -382,27 +327,6 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
         }
     }
 
-    private void checkTimeAttributeProperties(TimeAttributeProperties timeAttributeProperties, String tableName) {
-        if (timeAttributeProperties == null) {
-            return;
-        }
-
-        String proctimeColumn = timeAttributeProperties.getProctimeColumn();
-        String watermarkDelay = timeAttributeProperties.getWatermarkDelay();
-        String watermarkColumn = timeAttributeProperties.getWatermarkColumn();
-
-        if (proctimeColumn != null && (
-                watermarkDelay != null ||
-                        watermarkColumn != null)) {
-            throw new IllegalArgumentException("Either proctime or watermark properties should be specified for a table "
-                    + tableName + ".");
-        }
-        if (proctimeColumn == null && (watermarkDelay == null || watermarkColumn == null)) {
-            throw new IllegalArgumentException("You should specify both watermarkDelay and watermarkColumn properties when using watermark for a table "
-                    + tableName + ".");
-        }
-    }
-
     private DataType retrievePartitionColumnDataType(String[] columnNames, DataType[] types, String partitionColumnName, String tableName) {
         for (int columnIndex = 0; columnIndex < columnNames.length; columnIndex++) {
             if (Objects.equals(columnNames[columnIndex], partitionColumnName)) {
@@ -441,22 +365,12 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-    private Schema buildSchema(String[] columnNames, DataType[] types, Optional<UniqueConstraint> primaryKey,
-                               TimeAttributeProperties timeAttributeProperties) {
+    private Schema buildSchema(String[] columnNames, DataType[] types, Optional<UniqueConstraint> primaryKey) {
         Schema.Builder schemaBuilder = Schema.newBuilder().fromFields(columnNames, types);
         primaryKey.ifPresent(pk -> schemaBuilder.primaryKeyNamed(pk.getName(), pk.getColumns()));
 
-        if (timeAttributeProperties != null) {
-            // using proctime
-            if (timeAttributeProperties.getProctimeColumn() != null) {
-                schemaBuilder.columnByExpression(timeAttributeProperties.getProctimeColumn(), "PROCTIME()");
-            } else { // using watermarking
-                schemaBuilder.watermark(
-                        timeAttributeProperties.getWatermarkColumn(),
-                        timeAttributeProperties.getWatermarkColumn() +
-                                " - INTERVAL " +
-                                timeAttributeProperties.getWatermarkDelay());
-            }
+        if (addProctimeColumn) {
+            schemaBuilder.columnByExpression("proctime", "PROCTIME()");
         }
         return schemaBuilder.build();
     }
@@ -618,42 +532,6 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
             return "partitionColumnName=" + partitionColumnName + ", partitionNumber=" + partitionNumber +
                     ", scanPartitionLowerBound=" + scanPartitionLowerBound +
                     ", scanPartitionUpperBound=" + scanPartitionUpperBound;
-        }
-    }
-
-    static class TimeAttributeProperties {
-        private String watermarkColumn;
-        private String watermarkDelay;
-        private String proctimeColumn;
-
-        public String getWatermarkColumn() {
-            return this.watermarkColumn;
-        }
-
-        public String getWatermarkDelay() {
-            return this.watermarkDelay;
-        }
-
-        public String getProctimeColumn() {
-            return this.proctimeColumn;
-        }
-
-        public void setWatermarkColumn(String watermarkColumn) {
-            this.watermarkColumn = watermarkColumn;
-        }
-
-        public void setWatermarkDelay(String watermarkDelay) {
-            this.watermarkDelay = watermarkDelay;
-        }
-
-        public void setProctimeColumn(String proctimeColumn) {
-            this.proctimeColumn = proctimeColumn;
-        }
-
-        public String toString() {
-            return "watermarkColumn=" + watermarkColumn +
-                    ", watermarkDelay=" + watermarkDelay +
-                    ", proctimeColumn=" + proctimeColumn;
         }
     }
 }

@@ -58,16 +58,13 @@ separating them with a comma `,` sign.
 
 The Flink tables created this way can also be partitioned just as other Flink tables by providing default catalog scan options or table specific scan options.
 
-### Timeattributes
-It is possible to declare `timeattributes` for tables in the catalog by specifying additional 
-We can either use processing time by specifying how to name a processing time column:
-- `properties.timeattribute.{tablename}.proctime.column`
+### Time attributes
 
-or column and delay for watermarking:
-- `properties.timeattribute.{tablename}.watermark.column`
-- `properties.timeattribute.{tablename}.watermark.delay`
+It is possible to add `proctime` column to each catalog table.
 
-It is possible to specify watermark properties for catalog tables. 
+```properties
+catalog.add-proctime-column=true
+```
 
 ---
 

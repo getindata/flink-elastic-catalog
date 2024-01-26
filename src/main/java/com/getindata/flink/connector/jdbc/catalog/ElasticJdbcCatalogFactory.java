@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.ADD_PROCTIME_COLUMN;
 import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.BASE_URL;
 import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.DEFAULT_DATABASE;
 import static com.getindata.flink.connector.jdbc.catalog.ElasticJdbcCatalogFactoryOptions.DEFAULT_SCAN_PARTITION_COLUMN_NAME;
@@ -61,6 +62,7 @@ public class ElasticJdbcCatalogFactory implements CatalogFactory {
         options.add(DEFAULT_SCAN_PARTITION_COLUMN_NAME);
         options.add(DEFAULT_SCAN_PARTITION_SIZE);
         options.add(PROPERTIES_INDEX_PATTERNS);
+        options.add(ADD_PROCTIME_COLUMN);
         options.add(EXCLUDE);
         options.add(INCLUDE);
         return options;
@@ -80,6 +82,7 @@ public class ElasticJdbcCatalogFactory implements CatalogFactory {
                 helper.getOptions().get(USERNAME),
                 helper.getOptions().get(PASSWORD),
                 helper.getOptions().get(BASE_URL),
+                Boolean.getBoolean(context.getOptions().get(ADD_PROCTIME_COLUMN)),
                 IndexFilterResolver.of(helper.getOptions().get(INCLUDE), helper.getOptions().get(EXCLUDE)),
                 context.getOptions()
         );
@@ -90,16 +93,11 @@ public class ElasticJdbcCatalogFactory implements CatalogFactory {
         for (Map.Entry<String, String> entry : scanOptions.entrySet()) {
             String key = entry.getKey();
             if (!(key.startsWith("properties.scan.") && key.endsWith("partition.column.name")) &&
-                    !(key.startsWith("properties.scan.") && key.endsWith("partition.number")) &&
-                    !(key.startsWith("properties.watermark.") && key.endsWith("interval")) &&
-                    !(key.startsWith("properties.watermark.") && key.endsWith("unit"))) {
-                throw new IllegalArgumentException("Parameter " + entry.getKey() + " is not supported. We support" +
-                        " properties.scan.<table_name>.partition.column.name, " +
-                        " properties.scan.<table_name>.partition.number, " +
-                        " properties.timeattribute.<table_name>.watermark.column, " +
-                        " properties.timeattribute.<table_name>.watermark.delay, " +
-                        " properties.timeattribute.<table_name>.proctime.column " +
-                        "dynamic properties only."
+                    !(key.startsWith("properties.scan.") && key.endsWith("partition.number"))) {
+                throw new IllegalArgumentException("Parameter " + entry.getKey() + " is not supported." +
+                        " We support only the following dynamic properties:\n" +
+                        " properties.scan.<table_name>.partition.column.name\n" +
+                        " properties.scan.<table_name>.partition.number"
                 );
             }
         }
