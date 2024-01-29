@@ -1,6 +1,8 @@
 package com.getindata.flink.connector.jdbc.catalog;
 
 import org.apache.flink.shaded.guava30.com.google.common.base.Strings;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +12,8 @@ import java.util.stream.Collectors;
 import static java.util.Collections.emptyList;
 
 class IndexFilterResolver {
+
+    private static final Logger LOG = LoggerFactory.getLogger(IndexFilterResolver.class);
 
     static IndexFilterResolver acceptAll() {
         return new IndexFilterResolver(emptyList(), emptyList());
@@ -40,12 +44,17 @@ class IndexFilterResolver {
     boolean isAccepted(String objectName) {
         if (!includePatterns.isEmpty()) {
             if (includePatterns.stream().noneMatch(pattern -> pattern.matcher(objectName).matches())) {
+                LOG.info("'{}' does not match any include pattern. Include patterns='{}'.", objectName, includePatterns);
                 return false;
             }
         }
         if (!excludePatterns.isEmpty()) {
-            return excludePatterns.stream().noneMatch(pattern -> pattern.matcher(objectName).matches());
+            if (excludePatterns.stream().anyMatch(pattern -> pattern.matcher(objectName).matches())) {
+                LOG.info("'{}' matches exclude pattern; exclude patterns='{}'.", objectName, excludePatterns);
+                return false;
+            }
         }
+        LOG.info("'{}' matches include pattern and does not match any exclude pattern.", objectName);
         return true;
     }
 
