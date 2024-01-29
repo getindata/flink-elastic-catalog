@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Fix `catalog.include` option and add more logging.
+
 ## [0.1.1] - 2024-01-26
 
 -   Add `catalog.include` and `catalog.exclude` options.

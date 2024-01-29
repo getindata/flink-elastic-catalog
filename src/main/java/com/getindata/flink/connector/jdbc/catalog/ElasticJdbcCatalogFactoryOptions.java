@@ -85,7 +85,7 @@ public class ElasticJdbcCatalogFactoryOptions {
             .withDescription("Comma-separated list of index/datastream exclude patterns.");
 
     public static final ConfigOption<String> INCLUDE =
-        ConfigOptions.key("catalog.exclude")
+        ConfigOptions.key("catalog.include")
             .stringType()
             .noDefaultValue()
             .withDescription("Comma-separated list of index/datastream include patterns.");
