@@ -41,8 +41,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
     <elastic.version>8.11.1</elastic.version>
-    <flink.version>1.17.1</flink.version>
-    <flink-connector-jdbc.version>3.1.1-1.17</flink-connector-jdbc.version>
+    <flink.version>1.18.1</flink.version>
+    <flink-connector-jdbc.version>3.1.2-1.18</flink-connector-jdbc.version>
     <flink-connector-jdbc-elasticsearch-dialect.version>0.2.0</flink-connector-jdbc-elasticsearch-dialect.version>
 
     <!-- Test properties -->
@@ -176,6 +176,7 @@
       <groupId>com.getindata</groupId>
       <artifactId>flink-connector-jdbc-elasticsearch-dialect</artifactId>
       <version>${flink-connector-jdbc-elasticsearch-dialect.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.elasticsearch.plugin</groupId>

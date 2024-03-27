@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+-   Support Flink 1.19.0.
+
 ## [0.2.0] - 2024-01-29
 
 -   Fix `catalog.include` option and add more logging.

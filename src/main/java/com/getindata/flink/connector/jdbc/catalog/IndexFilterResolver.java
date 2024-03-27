@@ -1,6 +1,5 @@
 package com.getindata.flink.connector.jdbc.catalog;
 
-import org.apache.flink.shaded.guava30.com.google.common.base.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +23,7 @@ class IndexFilterResolver {
     }
 
     private static List<Pattern> parseRaw(String commaSeparatedList) {
-        if (Strings.isNullOrEmpty(commaSeparatedList)) {
+        if (commaSeparatedList == null || commaSeparatedList.isEmpty()) {
             return emptyList();
         }
         return Arrays.stream(commaSeparatedList.split(","))
