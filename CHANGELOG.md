@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+## [0.4.0] - 2024-04-23
+
 ## [0.3.0] - 2024-04-11
 
 -   Support Flink 1.19.0.
@@ -38,7 +40,9 @@
 
 -   Initial implementation of Flink Catalog for Elastic
 
-[Unreleased]: https://github.com/getindata/flink-elastic-catalog/compare/0.3.0...HEAD
+[Unreleased]: https://github.com/getindata/flink-elastic-catalog/compare/0.4.0...HEAD
+
+[0.4.0]: https://github.com/getindata/flink-elastic-catalog/compare/0.3.0...0.4.0
 
 [0.3.0]: https://github.com/getindata/flink-elastic-catalog/compare/0.2.0...0.3.0
 
