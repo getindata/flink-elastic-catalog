@@ -42,6 +42,7 @@ public class ElasticTypeMapper implements JdbcDialectTypeMapper {
     private static final String ELASTIC_SCALED_FLOAT = "SCALED_FLOAT";
     private static final String ELASTIC_SHORT = "SHORT";
     private static final String ELASTIC_GEO_POINT = "GEO_POINT";
+    private static final String ELASTIC_VERSION = "VERSION";
 
     @Override
     public DataType mapping(ObjectPath tablePath, ResultSetMetaData metadata, int colIndex) throws SQLException {
@@ -53,6 +54,7 @@ public class ElasticTypeMapper implements JdbcDialectTypeMapper {
             case ELASTIC_KEYWORD:
             case ELASTIC_IP:
             case ELASTIC_GEO_POINT:
+            case ELASTIC_VERSION:
                 return DataTypes.STRING();
             case ELASTIC_BOOLEAN:
                 return DataTypes.BOOLEAN();
