@@ -2,7 +2,6 @@ package com.getindata.flink.connector.jdbc.catalog;
 
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.table.catalog.ObjectPath;
-import org.apache.flink.table.catalog.exceptions.DatabaseNotExistException;
 import org.apache.flink.table.factories.CatalogFactory.Context;
 import org.apache.flink.table.factories.FactoryUtil;
 import org.junit.jupiter.api.Test;
@@ -15,6 +14,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public class ElasticJdbcCatalogFactoryTest extends ElasticCatalogTestBase {
+
     @Test
     public void testCreateElasticCatalogNoAdditionalOptions() {
         // given
@@ -80,10 +80,13 @@ public class ElasticJdbcCatalogFactoryTest extends ElasticCatalogTestBase {
     }
 
     @Test
-    public void testCreateElasticCatalogIndexPatternsOptions() throws DatabaseNotExistException {
+    public void testCreateElasticCatalogIndexPatternsOptions() throws Exception {
         // given
+        createTestIndex("test_some_table", "elastic/test-index.json");
+
+        // and
         Map<String, String> options = getCommonOptions();
-        options.put("properties.index.patterns", "example_table_*");
+        options.put("properties.index.patterns", "test*");
 
         Context catalogContext = new FactoryUtil.DefaultCatalogContext("test-catalog",
                 options,
@@ -94,7 +97,10 @@ public class ElasticJdbcCatalogFactoryTest extends ElasticCatalogTestBase {
         ElasticCatalog catalog = (ElasticCatalog) catalogFactory.createCatalog(catalogContext);
 
         // then
-        assertEquals(singletonList("example_table_*"), catalog.getIndexPatterns());
-        assertTrue(catalog.tableExists(new ObjectPath("docker-cluster", "example_table_*")));
+        assertEquals(singletonList("test*"), catalog.getIndexPatterns());
+        assertTrue(catalog.tableExists(new ObjectPath("docker-cluster", "test*")));
+
+        // cleanup
+        deleteTestIndex("test_some_table");
     }
 }

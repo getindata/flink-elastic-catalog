@@ -42,6 +42,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLDataException;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -225,7 +226,19 @@ public class ElasticCatalog extends AbstractJdbcCatalog {
             throw new RuntimeException(e);
         }
 
-        tables.addAll(indexPatterns);
+        try (Connection connection = DriverManager.getConnection(baseUrl, username, pwd)) {
+            for (String indexPattern : indexPatterns) {
+                try {
+                    retrieveResultSetMetaData(connection, new ObjectPath(databaseName, indexPattern));
+                    tables.add(indexPattern);
+                } catch (SQLDataException e) {
+                    LOG.warn(format("Index pattern '%s' not found.", indexPattern));
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
         return tables;
     }
 

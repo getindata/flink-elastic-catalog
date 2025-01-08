@@ -43,17 +43,17 @@ class IndexFilterResolver {
     boolean isAccepted(String objectName) {
         if (!includePatterns.isEmpty()) {
             if (includePatterns.stream().noneMatch(pattern -> pattern.matcher(objectName).matches())) {
-                LOG.info("'{}' does not match any include pattern. Include patterns='{}'.", objectName, includePatterns);
+                LOG.debug("'{}' does not match any include pattern. Include patterns='{}'.", objectName, includePatterns);
                 return false;
             }
         }
         if (!excludePatterns.isEmpty()) {
             if (excludePatterns.stream().anyMatch(pattern -> pattern.matcher(objectName).matches())) {
-                LOG.info("'{}' matches exclude pattern; exclude patterns='{}'.", objectName, excludePatterns);
+                LOG.debug("'{}' matches exclude pattern; exclude patterns='{}'.", objectName, excludePatterns);
                 return false;
             }
         }
-        LOG.info("'{}' matches include pattern and does not match any exclude pattern.", objectName);
+        LOG.debug("'{}' matches include pattern and does not match any exclude pattern.", objectName);
         return true;
     }
 
