@@ -107,6 +107,18 @@ class ElasticCatalogTestBase {
             assertTrue(response.isSuccessful());
         }
     }
+    protected static void deleteTestIndex(String inputTable) throws Exception {
+        OkHttpClient client = new OkHttpClient();
+        Request request = new Request.Builder()
+                .url(String.format("http://%s:%d/%s/", container.getHost(),
+                        container.getElasticPort(), inputTable))
+                .delete()
+                .addHeader("Authorization", Credentials.basic(USERNAME, PASSWORD))
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            assertTrue(response.isSuccessful());
+        }
+    }
 
     protected static void addTestData(String inputTable, String inputPath) throws Exception {
         OkHttpClient client = new OkHttpClient();

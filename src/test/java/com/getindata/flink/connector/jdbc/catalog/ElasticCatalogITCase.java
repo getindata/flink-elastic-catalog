@@ -28,8 +28,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
-
 public class ElasticCatalogITCase extends ElasticCatalogTestBase {
+
     private static final String INPUT_SINGLE_RECORD_TABLE = "test_single_record_table";
     private static final String INPUT_MULTIPLE_RECORDS_TABLE = "test_multiple_records_table";
     private static final String INPUT_MISSING_DATE_COL_TABLE = "test_missing_date_col_table";
@@ -99,11 +99,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     }
 
     @Test
-    public void testListDatabases() throws DatabaseNotExistException, TableNotExistException {
-        // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-
+    public void testListDatabases() {
         // when
         ElasticCatalog catalog = catalogBuilder().build();
 
@@ -114,11 +110,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     }
 
     @Test
-    public void testListTables() throws DatabaseNotExistException, InterruptedException {
-        // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-
+    public void testListTables() throws DatabaseNotExistException {
         // when
         ElasticCatalog catalog = catalogBuilder().build();
 
@@ -140,10 +132,6 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
     @Test
     public void testTableFiltering() throws DatabaseNotExistException {
-        // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-
         // when
         ElasticCatalog catalog = catalogBuilder()
                 .indexFilterResolver(IndexFilterResolver.of("test_m.*", "test_mi.*"))
@@ -159,11 +147,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     }
 
     @Test
-    public void testTableExists() throws DatabaseNotExistException {
-        // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-
+    public void testTableExists() {
         // when
         ElasticCatalog catalog = catalogBuilder().build();
 
@@ -193,10 +177,6 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
 
     @Test
     public void testGetNonPartitionedTable() throws TableNotExistException {
-        // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-
         // when
         ElasticCatalog catalog = catalogBuilder().build();
         CatalogBaseTable table = catalog.getTable(new ObjectPath(
@@ -214,9 +194,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     @Test
     public void testGetTablePartitionedByTimestamp() throws TableNotExistException {
         // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("properties.scan.test_multiple_records_table.partition.column.name", "date_col");
         properties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
@@ -238,9 +216,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     @Test
     public void testGetTablePartitionedByInteger() throws TableNotExistException {
         // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("properties.scan.test_multiple_records_table.partition.column.name", "integer_col");
         properties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
@@ -262,9 +238,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     @Test
     public void testGetTableDefaultScanOptionsZeroRecords() throws TableNotExistException {
         // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("catalog.default.scan.partition.column.name", "date_col");
         properties.put("catalog.default.scan.partition.size", "100");
 
@@ -287,9 +261,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     @Test
     public void testFailNoPartitionColumnProvided() throws TableNotExistException {
         // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("properties.scan.test_multiple_records_table.partition.number", "10");
 
         // when
@@ -307,9 +279,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     @Test
     public void testFailNoPartitionNumberProvided() throws TableNotExistException {
         // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("properties.scan.test_multiple_records_table.partition.column.name", "date_col");
 
         // when
@@ -327,9 +297,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     @Test
     public void testFailNoPartitionColumnInTable() throws TableNotExistException {
         // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("properties.scan.test_missing_date_col_table.partition.column.name", "date_col");
         properties.put("properties.scan.test_missing_date_col_table.partition.number", "10");
 
@@ -348,9 +316,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     @Test
     public void testFailPartitionColumnNotSupported() throws TableNotExistException {
         // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("properties.scan.test_single_record_table.partition.column.name", "keyword_col");
         properties.put("properties.scan.test_single_record_table.partition.number", "10");
 
@@ -369,9 +335,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     @Test
     public void testFailInappropriatePartitionNumber() throws TableNotExistException {
         // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("properties.scan.test_multiple_records_table.partition.column.name", "date_col");
         properties.put("properties.scan.test_multiple_records_table.partition.number", "0");
 
@@ -390,10 +354,6 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     @Disabled
     @Test
     public void testUnsupportedDataTypeInTable() throws TableNotExistException {
-        // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-
         // when
         ElasticCatalog catalog = catalogBuilder().build();
         try {
@@ -409,9 +369,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     @Test
     public void testGetTableDefaultCatalogScanPartitionProperties() throws TableNotExistException {
         // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("catalog.default.scan.partition.column.name", "date_col");
         properties.put("catalog.default.scan.partition.size", "5");
 
@@ -432,9 +390,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     @Test
     public void testGetTableOverwriteCatalogScanProperties() throws TableNotExistException {
         // given
-        String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
-                container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("properties.scan.test_multiple_records_table.partition.column.name", "integer_col");
         properties.put("properties.scan.test_multiple_records_table.partition.number", "3");
         properties.put("catalog.default.scan.partition.column.name", "date_col");
@@ -458,7 +414,7 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("properties.index.patterns", "test_*_record_table");
 
         // when
@@ -511,11 +467,24 @@ public class ElasticCatalogITCase extends ElasticCatalogTestBase {
     }
 
     @Test
+    public void testShouldIgnoreNonexistingIndexPattern() {
+        // given
+        Map<String, String> properties = new HashMap<>();
+        properties.put("properties.index.patterns", "non_existing_pattern*");
+
+        // when
+        catalogBuilder().properties(properties).build();
+
+        // then
+        // no exception thrown
+    }
+
+    @Test
     public void testGetMultipleIndexPatternPartitionedTables() throws TableNotExistException, DatabaseNotExistException {
         // given
         String url = String.format("jdbc:elasticsearch://%s:%d", container.getHost(),
                 container.getElasticPort());
-        Map<String, String> properties = new HashMap<String, String>();
+        Map<String, String> properties = new HashMap<>();
         properties.put("properties.scan.test_*_record*_table.partition.column.name", "date_col");
         properties.put("properties.scan.test_*_record*_table.partition.number", "10");
         properties.put("properties.scan.test_partial_schema_table_*.partition.column.name", "integer_col");
